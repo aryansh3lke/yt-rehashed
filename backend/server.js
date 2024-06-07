@@ -7,7 +7,8 @@ const app = express();
 const PORT = 8080;
 
 const execPromise = util.promisify(exec);
-const punctuateScriptPath = '../ml/punctuate.py';
+const punctuateScriptPath = '../ml/punctuator.py';
+const tokenizerScriptPath = '../ml/tokenizer.py';
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -18,8 +19,8 @@ function extractVideoId(url) {
   return match ? match[1] : null;
 }
 
-async function punctuateText(inputString) {
-  const command = `python ${punctuateScriptPath} "${inputString}"`;
+async function executePythonScript(scriptPath, inputString) {
+  const command = `python ${scriptPath} "${inputString}"`;
 
   return execPromise(command)
     .then(({ stdout, stderr }) => {
@@ -31,28 +32,33 @@ async function punctuateText(inputString) {
 }
 
 app.post('/api/get-summary', async (req, res) => {
-  console.log(req.body);
+  // console.log(req.body);
   const videoID = extractVideoId(req.body.videoUrl);
-  console.log(videoID);
+  // console.log(videoID);
 
   // invalid youtube url, video id could not be extracted (client fault)
   if (videoID === null) {
     console.log("no valid id");
-    res.status(400).json({ message: "Invalid URL" });
+    res.status(400).json({ message: "Invalid URL." });
   }
 
   const captions = await transcriptAPI.getTranscript(videoID)
   if (!captions) {
-    return res.status(400).send({ message: "Invalid video ID in URL" });
+    return res.status(400).send({ message: "Invalid video ID in URL." });
   }
 
   const transcript = captions.map(caption => caption.text).join(' ');
-  const punctutatedText = await punctuateText(transcript);
-  if (!punctutatedText) {
-    return res.status(500).send({ message: "Transcript could not be punctuated" });
+  const punctuatedText = await executePythonScript(punctuateScriptPath, transcript);
+  if (!punctuatedText) {
+    return res.status(500).send({ message: "Transcript could not be punctuated." });
   }
 
-  return res.status(200).send({ punctuatedTranscript: punctutatedText });
+  const sentences = JSON.parse(await executePythonScript(tokenizerScriptPath, punctuatedText));
+  if (!sentences) {
+    return res.status(500).send({ message: "Sentences could not be tokenized." });
+  }
+
+  return res.status(200).send({ punctuatedTranscript: sentences });
 });
 
 app.listen(PORT, () => {
