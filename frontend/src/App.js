@@ -4,20 +4,20 @@ import axios from 'axios';
 
 function App() {
   const [videoLink, setVideoLink] = useState("");
-  const [videoTranscript, setTranscript] = useState("");
+  const [videoSummary, setSummary] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     let url = videoLink;
     setVideoLink("");
 
-    axios.post('/api/get-transcript', { videoUrl: url })
+    axios.post('/api/get-summary', { videoUrl: url })
       .then(response => {
-        setTranscript(response.data.transcript);
+        setSummary(response.data.punctuatedTranscript);
       })
       .catch(error => {
         console.error(error);
-        setTranscript("Invalid URL!");
+        setSummary("Invalid URL!");
     });
     
   };
@@ -38,10 +38,10 @@ function App() {
         <button onClick={handleSubmit}>Summarize</button>
       </div>
       
-      {videoTranscript && (
+      {videoSummary && (
         <div>
-          <h2>Video Transcript:</h2>
-          <p>{videoTranscript}</p>
+          <h2>Video Transcript (Punctuated):</h2>
+          <p>{videoSummary}</p>
         </div>
       )}
     </div>

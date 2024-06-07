@@ -12,8 +12,11 @@
   "description": "",
   "dependencies": {
     "axios": "^1.7.2",
-    "cheerio": "^1.0.0-rc.12",
+    "child_process": "^1.0.2",
+    "compromise": "^14.13.0",
     "express": "^4.19.2",
+    "fs": "^0.0.1-security",
+    "util": "^0.12.5",
     "youtube-transcript-api": "^1.1.2"
   },
   "devDependencies": {
