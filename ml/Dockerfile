@@ -8,7 +8,7 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-ENV PORT=8000
+ENV OPENAI_API_KEY=sk-proj-5Ry9FbEBcv4mmp6LYoczT3BlbkFJ3mAsn5Gi2a3nbub2Qskl
 
 EXPOSE 8000
 
