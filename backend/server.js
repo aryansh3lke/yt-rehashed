@@ -7,8 +7,7 @@ const app = express();
 const PORT = 8080;
 
 const execPromise = util.promisify(exec);
-const punctuateScriptPath = '../ml/punctuator.py';
-const tokenizerScriptPath = '../ml/tokenizer.py';
+const summarizerScriptPath = '../ml/summarizer.py';
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -32,9 +31,7 @@ async function executePythonScript(scriptPath, inputString) {
 }
 
 app.post('/api/get-summary', async (req, res) => {
-  // console.log(req.body);
   const videoID = extractVideoId(req.body.videoUrl);
-  // console.log(videoID);
 
   // invalid youtube url, video id could not be extracted (client fault)
   if (videoID === null) {
@@ -44,21 +41,19 @@ app.post('/api/get-summary', async (req, res) => {
 
   const captions = await transcriptAPI.getTranscript(videoID)
   if (!captions) {
+    console.log("could not make captions");
     return res.status(400).send({ message: "Invalid video ID in URL." });
   }
 
   const transcript = captions.map(caption => caption.text).join(' ');
-  const punctuatedText = await executePythonScript(punctuateScriptPath, transcript);
-  if (!punctuatedText) {
-    return res.status(500).send({ message: "Transcript could not be punctuated." });
+  const summary = await executePythonScript(summarizerScriptPath, transcript);
+
+  if (!summary) {
+    console.log("could not make summary");
+    return res.status(500).send({ message: "Failed to make a summary of the transcript." });
   }
 
-  const sentences = JSON.parse(await executePythonScript(tokenizerScriptPath, punctuatedText));
-  if (!sentences) {
-    return res.status(500).send({ message: "Sentences could not be tokenized." });
-  }
-
-  return res.status(200).send({ punctuatedTranscript: sentences });
+  return res.status(200).send({ punctuatedTranscript: summary });
 });
 
 app.listen(PORT, () => {
