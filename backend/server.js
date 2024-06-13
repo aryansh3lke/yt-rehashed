@@ -35,25 +35,28 @@ app.post('/api/get-summary', async (req, res) => {
 
   // invalid youtube url, video id could not be extracted (client fault)
   if (videoID === null) {
-    console.log("no valid id");
-    res.status(400).json({ message: "Invalid URL." });
+    console.error("Error: URL is not a valid YouTube link");
+    return res.status(400).json({ message: "Please enter a valid YouTube URL!" });
   }
 
-  const captions = await transcriptAPI.getTranscript(videoID)
-  if (!captions) {
-    console.log("could not make captions");
-    return res.status(400).send({ message: "Invalid video ID in URL." });
-  }
+  transcriptAPI.getTranscript(videoID)
+    .then(captions => {
+      const transcript = captions.map(caption => caption.text).join(' ');
 
-  const transcript = captions.map(caption => caption.text).join(' ');
-  const summary = await executePythonScript(summarizerScriptPath, transcript);
-
-  if (!summary) {
-    console.log("could not make summary");
-    return res.status(500).send({ message: "Failed to make a summary of the transcript." });
-  }
-
-  return res.status(200).send({ punctuatedTranscript: summary });
+      executePythonScript(summarizerScriptPath, transcript)
+      .then(summary => {
+        console.log("\x1b[36m%s\x1b[0m", "Video successfully summarized!");
+        return res.status(200).send({ summary: summary , videoID: videoID });
+      })
+      .catch(error => {
+        console.error("Error: Video could not be summarized by ChatGPT")
+        return res.status(500).send({ message: "Failed to make a summary of the transcript." });
+      });
+    })
+    .catch(error => {
+      console.error("Error: URL does not contain a valid YouTube video ID");
+      return res.status(400).send({ message: "YouTube video does not exist for the given URL!" });
+    });
 });
 
 app.listen(PORT, () => {
