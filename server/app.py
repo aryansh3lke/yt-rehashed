@@ -44,6 +44,10 @@ def summarize_transcript(transcript):
 
     return completion.choices[0].message.content
 
+@app.route('/')
+def hello():
+    return "Welcome to the Youtube Rehashed Flask backend!"
+
 @app.route('/api/get-summary', methods=['POST'])
 def get_summary():
     video_url = request.json.get('videoUrl')
