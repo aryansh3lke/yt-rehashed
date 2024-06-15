@@ -60,13 +60,6 @@ function App() {
         )}
         {summary && (
           <div className="result">
-            <div id="video-summary">
-              <h2>Video Summary</h2>
-              <div className="video-container">
-              <p id="summary">{summary}</p>
-              </div>
-            </div>
-
             <div id="original-video">
               <h2>Original Video</h2>
               <div className="video-container">
@@ -77,6 +70,13 @@ function App() {
                 </iframe>
               </div>
             </div>
+
+            <div id="video-summary">
+              <h2>Video Summary</h2>
+              <div className="video-container">
+              <p id="summary">{summary}</p>
+              </div>
+            </div>  
           </div>
         )}
       </header>
