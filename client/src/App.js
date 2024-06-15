@@ -15,7 +15,7 @@ function App() {
     setVideoID("");
     setBuffering(true);
 
-    fetch('/api/get-summary', {
+    fetch('https://yt-rehashed-server.vercel.app/api/get-summary', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
