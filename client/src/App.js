@@ -15,7 +15,7 @@ function App() {
     setVideoID("");
     setBuffering(true);
 
-    fetch('api/get-summary', {
+    fetch('/api/get-summary', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
