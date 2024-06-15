@@ -4,11 +4,19 @@ from openai import OpenAI
 from youtube_transcript_api import YouTubeTranscriptApi
 from dotenv import load_dotenv
 from re import search
+import os
 
 app = Flask(__name__)
 CORS(app)
 
 load_dotenv()
+
+secret_file_path = '/run/secrets/openai_key'
+if os.path.exists(secret_file_path):
+    with open(secret_file_path, 'r') as file:
+        openai_api_key = file.read().strip()
+    os.environ['OPENAI_API_KEY'] = openai_api_key
+        
 client = OpenAI()
 
 def extract_video_id(url):

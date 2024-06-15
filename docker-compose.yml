@@ -1,18 +1,19 @@
 version: '3'
 services:
-  frontend:
-    build: ./frontend
+  client:
+    build: ./client
     ports:
       - "3000:3000"
 
-  # backend:
-  #   build: ./backend
-  #   ports:
-  #     - "8080:8080"
-
-  ml:
-    build: ./ml
+  server:
+    build: ./server
     ports:
       - "8000:8000"
     environment:
-      - OPENAI_API_KEY=sk-proj-5Ry9FbEBcv4mmp6LYoczT3BlbkFJ3mAsn5Gi2a3nbub2Qskl
+      - OPENAI_API_KEY=/run/secrets/openai_key
+    secrets:
+      - openai_key
+
+secrets:
+  openai_key:
+    file: ./secrets.txt
