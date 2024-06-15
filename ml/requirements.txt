@@ -1,2 +1,5 @@
-openai=1.33.0
-python-dotenv=0.21.0
+flask==3.0.3
+openai==1.33.0
+python-dotenv==0.21.0
+youtube-transcript-api==0.6.2
+flask-cors==4.0.1

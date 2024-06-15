@@ -1,6 +1,5 @@
 import './App.css';
 import React, { useState } from 'react';
-import axios from 'axios';
 
 function App() {
   const [inputLink, setLink] = useState("");
@@ -10,23 +9,33 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    let url = inputLink;
+    let videoUrl = inputLink;
     setLink("");
     setSummary("");
     setVideoID("");
     setBuffering(true);
 
-    axios.post('/api/get-summary', { videoUrl: url })
-      .then(response => {
+    fetch('api/get-summary', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ videoUrl })
+    })
+      .then(response => response.json()
+      .then(data => ({ status: response.status, body: data })))
+      .then(({ status, body }) => {
+        if (status !== 200) {
+          throw new Error(body.message);
+        }
         setBuffering(false);
-        setSummary(response.data.summary);
-        setVideoID(response.data.videoID);
+        setSummary(body.summary);
+        setVideoID(body.video_id);
       })
       .catch(error => {
         setBuffering(false);
-        window.alert(error.response.data.message);
-    });
-    
+        window.alert(error.message);
+      });
   };
 
   return (
