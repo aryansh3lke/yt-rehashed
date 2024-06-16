@@ -12,7 +12,7 @@ A tool to quickly generate quality summaries of YouTube videos. Summarize your v
 
 ## Introduction
 
-This fullstack React-Flask web application is designed to help users quickly grasp the content of YouTube videos through summarizes generated with the help of OpenAI's API and ChatGPT-3.5-turbo. This tool is especially useful for students, researchers, and anyone who wants to save time while consuming long-form video content.
+This full-stack React-Flask web application is designed to help users quickly grasp the content of YouTube videos through summarizes generated with the help of OpenAI's API and ChatGPT-3.5-turbo. This tool is especially useful for students, researchers, and anyone who wants to save time while consuming long-form video content.
 
 ## Features
 
