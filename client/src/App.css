@@ -152,12 +152,52 @@ h2 {
     100% { transform: rotate(360deg); }
 }
 
-@media only screen and (max-width: 1024px) {
+/* Small devices (portrait tablets and large phones, 600px and up) */
+@media only screen and (max-width: 600px) {
+    #logo-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        margin-bottom: 0;
+    }
+
+    .App-logo {
+        height: calc(30px + 15vw);
+    }
+    
+    h3 {
+        font-size: calc(15px + 2vw);
+        margin-top: 2rem;
+    }
+
+    #link-form {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    #link-form input {
+        font-size: calc(10px + 2vmin);
+        width: calc(300px + 5vw);
+    }
+      
+    #link-form button {
+        font-size: calc(10px + 2.5vw);
+        width: calc(30px + 30vw);
+    }
+
+    h2 {
+        font-size: calc(25px + 2vw);
+    }
+}
+
+@media only screen and (max-width: 1200px) {
     .result {
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-direction: column;
+        margin: 0 15px;
     }
 
     #video-summary {

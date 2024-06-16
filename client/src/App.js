@@ -76,7 +76,7 @@ function App() {
               <div className="video-container">
               <p id="summary">{summary}</p>
               </div>
-            </div>  
+            </div>
           </div>
         )}
       </header>
