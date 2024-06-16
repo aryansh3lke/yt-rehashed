@@ -1,6 +1,6 @@
 # YT Rehashed
 
-A tool to quickly generate quality summaries of YouTube videos. Summarize your videos here: ytrehashed.com
+A tool to quickly generate quality summaries of YouTube videos. Summarize your videos here: [ytrehashed.com](ytrehashed.com)
 
 ## Table of Contents
 
@@ -68,12 +68,14 @@ http://localhost:3000
 
 Enter the link of your YouTube video and wait about 5-10 seconds for the video and summary to show up.
 
-[Before](https://raw.githubusercontent.com/AryanShelke/yt-rehashed/main/images/usage_before.png)
+![Before](images/usage_before.png)
 
-[After](https://raw.githubusercontent.com/AryanShelke/yt-rehashed/main/images/usage_after.png)
+![After](images/usage_after.png)
 
 ## Contact
 
 Aryan Shelke
+
 Email: aryan.shelke.2003.@gmail.com
-LinkedIn: linkedin.com/in/aryanshelke
+
+LinkedIn: [linkedin.com/in/aryanshelke](linkedin.com/in/aryanshelke)
