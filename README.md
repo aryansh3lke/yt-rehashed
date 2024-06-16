@@ -34,7 +34,7 @@ Follow these steps to set up YT Rehashed locally:
 
 #### 1. Clone the repository
 
-`git clone https://github.com/AryanShelke/yt-rehashed.git`
+`git clone https://github.com/asshelke/yt-rehashed.git`
 
 #### 2. Navigate to the client directory
 
