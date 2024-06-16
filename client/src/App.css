@@ -10,18 +10,28 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 20px;
     margin-bottom: 0;
 }
 
 h1 {
-    margin: 0;
+    font-size: calc(40px + 3vw);
+    margin: 1vw 0;
 }
 
-
 .App-logo {
-    height: 10vmin;
+    height: calc(30px + 4vw);
     pointer-events: none;
+}
+
+h3 {
+    font-size: calc(10px + 2vw);
+    margin-top: 2rem;
+}
+
+h2 {
+    font-size: calc(20px + 2vw);
+    margin: 2rem;
 }
 
 .App-main {
@@ -30,7 +40,7 @@ h1 {
     flex-direction: column;
     align-items: center;
     justify-content: left;
-    font-size: calc(10px + 2vmin);
+    font-size: calc(10px +4vw);
     color: white;
     margin: 25px;
 }
@@ -48,17 +58,18 @@ h1 {
 }
   
 #link-form input {
-    font-size: calc(15px + 1vmin);
-    width: calc(400px + 15vmin);
+    font-size: calc(10px + 0.75vw);
+    width: calc(275px + 15vw);
     padding: 1rem;
     border: none;
     border-radius: 0.5rem;
 }
   
 #link-form button {
-    font-size: calc(15px + 1vmin);
+    font-size: calc(10px + 1vw);
+    width: calc(20px + 15vw);
     font-weight: 600;
-    width: calc(50px + 15vmin);
+    text-align: center;
     padding: 1rem;
     border: none;
     border-radius: 0.5rem;
