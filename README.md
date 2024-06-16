@@ -6,8 +6,8 @@ A tool to quickly generate quality summaries of YouTube videos. Summarize your v
 
 1. [Introduction](#introduction)
 2. [Features](#features)
-3. [Installation](#installation)
 4. [Usage](#usage)
+4. [Installation](#installation)
 5. [Contact](#contact)
 
 ## Introduction
@@ -19,6 +19,14 @@ This fullstack React-Flask web application is designed to help users quickly gra
 - Summarizes videos with only a link (no transcript needed)
 - Supports all lengths of Youtube videos up to 1 hour
 - Displays original video next to summary
+
+## Usage
+
+Enter the link of your YouTube video and wait about 5-10 seconds for the video and summary to show up.
+
+![Before](images/usage_before.png)
+
+![After](images/usage_after.png)
 
 ## Installation
 
@@ -38,7 +46,7 @@ Follow these steps to set up YT Rehashed locally:
 
 #### 4. Navigate to the server directory
 
-`cd ../server`
+`cd server`
 
 #### 5. Install all necessary Python dependencies
 
@@ -63,14 +71,6 @@ https://platform.openai.com/api-keys
 #### 9. View the website locally
 
 http://localhost:3000
-
-## Usage
-
-Enter the link of your YouTube video and wait about 5-10 seconds for the video and summary to show up.
-
-![Before](images/usage_before.png)
-
-![After](images/usage_after.png)
 
 ## Contact
 
