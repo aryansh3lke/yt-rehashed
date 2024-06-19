@@ -52,21 +52,21 @@ Follow these steps to set up YT Rehashed locally:
 
 `pip install -r requirements.txt`
 
-#### 6. Start the Flask backend server
-
-`python app.py`
-
-#### 7. Obtain an OpenAI API Key
+#### 6. Obtain an OpenAI API Key
 
 https://platform.openai.com/api-keys
 
 > IMPORTANT: You will need to deposit some money into your OpenAI account to use the API.
 
-#### 8. Add an environment variable for the key in a .env file
+#### 7. Add an environment variable for the key in a .env file
 
 `OPENAI_API_KEY=[add your key here]`
 
 > NOTE: Make sure to place the `.env` file in the `/server/` directory.
+
+#### 8. Start the Flask backend server
+
+`python app.py`
 
 #### 9. View the website locally
 
