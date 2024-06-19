@@ -4,13 +4,15 @@ from openai import OpenAI
 from youtube_transcript_api import YouTubeTranscriptApi
 from dotenv import load_dotenv
 from re import search
-import os
+import tiktoken
 
 app = Flask(__name__)
 CORS(app)
 
 load_dotenv()
 client = OpenAI()
+
+TOKENS_PER_MINUTE_LIMIT = 60000
 
 def extract_video_id(url):
     regex = r'(?:https?://)?(?:www\.)?(?:youtube\.com/(?:[^/\n\s]+/\S*/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be/)([a-zA-Z0-9_-]{11})'
@@ -23,6 +25,11 @@ def fetch_captions(video_id):
     except:
         return None
     return captions
+
+def get_token_count(transcript, encoding_name):
+    encoding = tiktoken.encoding_for_model(encoding_name)
+    num_tokens = len(encoding.encode(transcript))
+    return num_tokens
 
 def summarize_transcript(transcript):
     completion = client.chat.completions.create(
@@ -54,12 +61,15 @@ def get_summary():
         return jsonify({'message': 'YouTube video does not exist!'}), 400
     
     transcript = ' '.join([caption['text'] for caption in captions])
-
-    summary = summarize_transcript(transcript)
-    if not summary:
-        return jsonify({'message': 'Failed to summarize video!'}), 500
     
-    return jsonify({'summary': summary, "video_id": video_id}), 200
+    if get_token_count(transcript, "gpt-3.5-turbo") < TOKENS_PER_MINUTE_LIMIT:
+        summary = summarize_transcript(transcript)
+        if not summary:
+            return jsonify({'message': 'Failed to summarize video!'}), 500
+        else:
+            return jsonify({'summary': summary, "video_id": video_id}), 200
+    else:
+        return jsonify({'message': 'This video is too long to summarize!'}), 500
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8000)
