@@ -1,16 +1,19 @@
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from itertools import islice
 from openai import OpenAI
-from youtube_transcript_api import YouTubeTranscriptApi
-from dotenv import load_dotenv
 from re import search
 import tiktoken
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_comment_downloader import *
 
 app = Flask(__name__)
 CORS(app)
 
 load_dotenv()
 client = OpenAI()
+downloader = YoutubeCommentDownloader()
 
 TOKENS_PER_MINUTE_LIMIT = 60000
 
@@ -26,19 +29,27 @@ def fetch_captions(video_id):
         return None
     return captions
 
-def get_token_count(transcript, encoding_name):
+def get_comments(video_url, comment_count=100):
+    popular_comments = downloader.get_comments_from_url(video_url, sort_by=SORT_BY_POPULAR)
+    comment_str = ""
+    for index, comment in enumerate(islice(popular_comments, comment_count)):
+        comment_str += str(index + 1) + ") " + comment['text'] + "\n"
+    
+    return comment_str.strip()
+
+def get_token_count(transcript, comments, encoding_name):
     encoding = tiktoken.encoding_for_model(encoding_name)
-    num_tokens = len(encoding.encode(transcript))
+    num_tokens = len(encoding.encode(transcript + comments))
     return num_tokens
 
-def summarize_transcript(transcript):
+def summarize_video(transcript, comments):
     completion = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
-            {"role": "system", "content": "You are a summarizing assistant for Youtube videos that restates the main points."},
-            {"role": "user", "content": f"Summarize the following YouTube transcript in 200 to 250 words: {transcript}"}
+            {"role": "system", "content": "You are a summarizing assistant for Youtube videos that restates the main points and comments."},
+            {"role": "user", "content": f"In markdown output, summarize the YouTube transcript in 200 to 250 words: {transcript}\nSummarize the comments in another 200 to 250 words (Separate this response with a few lines): {comments}"}
         ],
-        max_tokens=350,
+        max_tokens=500,
         temperature=0.7
     )
 
@@ -61,9 +72,11 @@ def get_summary():
         return jsonify({'message': 'YouTube video does not exist!'}), 400
     
     transcript = ' '.join([caption['text'] for caption in captions])
+
+    comments = get_comments(video_url)
     
-    if get_token_count(transcript, "gpt-3.5-turbo") < TOKENS_PER_MINUTE_LIMIT:
-        summary = summarize_transcript(transcript)
+    if get_token_count(transcript, comments, "gpt-3.5-turbo") < TOKENS_PER_MINUTE_LIMIT:
+        summary = summarize_video(transcript, comments)
         if not summary:
             return jsonify({'message': 'Failed to summarize video!'}), 500
         else:
