@@ -15,7 +15,7 @@ load_dotenv()
 client = OpenAI()
 downloader = YoutubeCommentDownloader()
 
-TOKENS_PER_MINUTE_LIMIT = 60000
+CHATGPT_TOKEN_LIMIT = 16385
 CHATGPT_SUMMARIZATION_PROMPT = "Please provide two summaries in the following format:\n\n---\n\nSummary of the YouTube video transcript (200 to 250 words):\n'transcript'\n\n---\n\nSummary of the YouTube video comments (200 to 250 words):\n'comments'\n\n---"
 
 def extract_video_id(url):
@@ -88,7 +88,7 @@ def get_summary():
 
     comments = get_comments(video_url)
     
-    if get_token_count(transcript, comments, "gpt-3.5-turbo") < TOKENS_PER_MINUTE_LIMIT:
+    if get_token_count(transcript, comments, "gpt-3.5-turbo") < CHATGPT_TOKEN_LIMIT:
         video_summaries = summarize_video(transcript, comments)
         if video_summaries is None:
             return jsonify({'message': 'The summarizer is currently down!'}), 500
