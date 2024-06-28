@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 
 function App() {
   const [inputLink, setLink] = useState("");
-  const [summary, setSummary] = useState("");
+  const [transcriptSummary, setTranscriptSummary] = useState("");
+  const [commentSummary, setCommentSummary] = useState("");
   const [videoID, setVideoID] = useState("");
   const [buffering, setBuffering] = useState("");
 
@@ -11,7 +12,8 @@ function App() {
     e.preventDefault();
     let videoUrl = inputLink;
     setLink("");
-    setSummary("");
+    setTranscriptSummary("");
+    setCommentSummary("");
     setVideoID("");
     setBuffering(true);
 
@@ -29,7 +31,8 @@ function App() {
           throw new Error(body.message);
         }
         setBuffering(false);
-        setSummary(body.summary);
+        setTranscriptSummary(body.transcript_summary);
+        setCommentSummary(body.comment_summary);
         setVideoID(body.video_id);
       })
       .catch(error => {
@@ -58,7 +61,7 @@ function App() {
         {buffering && (
           <div className="loader"></div>
         )}
-        {summary && (
+        {transcriptSummary && (
           <div className="result">
             <div id="original-video">
               <h2>Original Video</h2>
@@ -74,7 +77,14 @@ function App() {
             <div id="video-summary">
               <h2>Video Summary</h2>
               <div className="video-container">
-              <p id="summary">{summary}</p>
+              <p id="summary">{transcriptSummary}</p>
+              </div>
+            </div>
+
+            <div id="video-summary">
+              <h2>Comments Summary</h2>
+              <div className="video-container">
+              <p id="summary">{commentSummary}</p>
               </div>
             </div>
           </div>
