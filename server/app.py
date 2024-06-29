@@ -32,11 +32,12 @@ def fetch_captions(video_id):
 
 def get_comments(video_url, comment_count=100):
     popular_comments = downloader.get_comments_from_url(video_url, sort_by=SORT_BY_POPULAR)
-    comment_str = ""
+    comments, comments_str = [], ""
     for index, comment in enumerate(islice(popular_comments, comment_count)):
-        comment_str += str(index + 1) + ") " + comment['text'] + "\n"
+        comments.append(comment)
+        comments_str += str(index + 1) + ") " + comment['text'] + "\n"
     
-    return comment_str.strip()
+    return (comments, comments_str.strip())
 
 def get_token_count(transcript, comments, encoding_name):
     encoding = tiktoken.encoding_for_model(encoding_name)
@@ -86,15 +87,18 @@ def get_summary():
     
     transcript = ' '.join([caption['text'] for caption in captions])
 
-    comments = get_comments(video_url)
+    comments, comments_str = get_comments(video_url)
     
-    if get_token_count(transcript, comments, "gpt-3.5-turbo") < CHATGPT_TOKEN_LIMIT:
-        video_summaries = summarize_video(transcript, comments)
+    if get_token_count(transcript, comments_str, "gpt-3.5-turbo") < CHATGPT_TOKEN_LIMIT:
+        video_summaries = summarize_video(transcript, comments_str)
         if video_summaries is None:
             return jsonify({'message': 'The summarizer is currently down!'}), 500
         else:
             transcript_summary, comment_summary = parse_summaries(video_summaries)
-            return jsonify({'transcript_summary': transcript_summary, 'comment_summary': comment_summary, 'video_id': video_id}), 200
+            return jsonify({'video_id': video_id,
+                            'comments': comments,
+                            'transcript_summary': transcript_summary, 
+                            'comment_summary': comment_summary}), 200
     else:
         return jsonify({'message': 'This video is too long to summarize!'}), 400
 

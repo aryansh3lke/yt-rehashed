@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 
 function App() {
   const [inputLink, setLink] = useState("");
+  const [videoId, setVideoId] = useState("");
+  const [comments, setComments] = useState([]);
   const [transcriptSummary, setTranscriptSummary] = useState("");
   const [commentSummary, setCommentSummary] = useState("");
-  const [videoID, setVideoID] = useState("");
   const [buffering, setBuffering] = useState("");
 
   const handleSubmit = async (e) => {
@@ -14,7 +15,7 @@ function App() {
     setLink("");
     setTranscriptSummary("");
     setCommentSummary("");
-    setVideoID("");
+    setVideoId("");
     setBuffering(true);
 
     fetch('http://localhost:8000/api/get-summary', {
@@ -31,9 +32,10 @@ function App() {
           throw new Error(body.message);
         }
         setBuffering(false);
+        setVideoId(body.video_id);
+        setComments(body.comments)
         setTranscriptSummary(body.transcript_summary);
         setCommentSummary(body.comment_summary);
-        setVideoID(body.video_id);
       })
       .catch(error => {
         setBuffering(false);
@@ -68,7 +70,7 @@ function App() {
               <div className="video-container">
                 <iframe
                   title="YouTube Video Player" 
-                  src={"https://www.youtube.com/embed/" + videoID}
+                  src={"https://www.youtube.com/embed/" + videoId}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen">
                 </iframe>
               </div>
@@ -77,14 +79,38 @@ function App() {
             <div id="video-summary">
               <h2>Video Summary</h2>
               <div className="video-container">
-              <p id="summary">{transcriptSummary}</p>
+                <p className="summary">{transcriptSummary}</p>
               </div>
             </div>
+          </div>
+        )}
+        {commentSummary && (
+          <div className="result">
+            <div id="comment-section">
+              <h2>Comment Section</h2>
+              <ul className="comment-list summary">
+                {comments.map((comment) => (
+                  <li key={comment.cid} className="comment-item">
+                    <img className="comment-profile" src={comment.photo} alt={comment.author}></img>
+                    <div className="comment-main">
+                      <p className="comment-header">
+                        <strong>{comment.author}</strong>
+                        <small>{comment.time}</small></p>
+                      <p className="comment-text">{comment.text}</p>
+                      <div className="comment-likes">
+                        <img src={process.env.PUBLIC_URL + '/thumbs-up.svg'} alt={"Like Button"}></img>
+                        <small className="comment-like-count">{comment.votes}</small>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-            <div id="video-summary">
-              <h2>Comments Summary</h2>
+            <div id="comment-summary">
+              <h2>Comment Summary</h2>
               <div className="video-container">
-              <p id="summary">{commentSummary}</p>
+              <p className="summary">{commentSummary}</p>
               </div>
             </div>
           </div>

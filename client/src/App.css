@@ -86,10 +86,18 @@ h2 {
     display: flex;
     justify-content: space-between;
     gap: 1rem;
-    margin: 0 50px;
+    margin: 15px 50px;
 }
 
 #video-summary {
+    width: 50%;
+}
+
+#comment-section {
+    width: 50%;
+}
+
+#comment-summary {
     width: 50%;
 }
 
@@ -97,14 +105,16 @@ h2 {
     width: 50%;
 }
 
-#summary {
+.summary {
     font-size: calc(5px + 2vmin);
+    height: 400px;
     text-align: left;
     margin: 0;
     padding: 2rem 2rem;
     border-radius: 8px;
     background-color: white;
     color: black;
+    overflow: scroll;
 }
 
 .video-container {
@@ -112,7 +122,8 @@ h2 {
     padding-bottom: 56.25%;
     height: 0;
 }
-.video-container iframe {
+
+iframe {
     position: absolute;
     top: 0;
     left: 0;
@@ -145,6 +156,64 @@ h2 {
     width: 200px;
     height: 200px;
     animation: spinner 4s linear infinite;
+}
+
+.comment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.comment-item {
+    display: flex;
+    justify-content: left;
+    align-items: top;
+    gap: 1rem;
+}
+
+.comment-profile {
+    background-repeat: no-repeat;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    float: left;
+    object-fit: cover;
+}
+
+.comment-main {
+    display: flex;
+    justify-content: left;
+    align-items: top;
+    flex-direction: column;
+    margin-top: 0;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.comment-text {
+    margin: 0.2vw;
+}
+
+.comment-likes {
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.comment-like-count {
+    margin: 0;
+}
+
+.like-icon {
+    filter: invert(100%);
 }
 
 @keyframes spinner {
@@ -197,7 +266,7 @@ h2 {
         align-items: center;
         justify-content: space-between;
         flex-direction: column;
-        margin: 0 15px;
+        margin: 15px 15px;
     }
 
     #video-summary {
