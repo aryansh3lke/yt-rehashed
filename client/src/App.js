@@ -44,31 +44,33 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <header className="App-main">
-        <div id="logo-title">
-          <img className="App-logo" src={process.env.PUBLIC_URL + '/logo512.png'} alt="YT Rehashed Logo"></img>
+    <div className="app">
+      <header className="app-main">
+        <div className="logo-title">
+          <img className="app-logo" src={process.env.PUBLIC_URL + '/logo512.png'} alt="YT Rehashed Logo"></img>
           <h1>YT Rehashed</h1>
         </div>
         <h3>Enter the link to summarize your YouTube video:</h3>
-        <div id="link-form">
+        <div className="link-form">
           <input
+            className="input-box"
             type="text"
             value={inputLink}
             placeholder="https://www.youtube.com/watch?v="
             onChange={(e) => setLink(e.target.value)}>
           </input>
-          <button onClick={handleSubmit}>Summarize</button>
+          <button className="submit-button" onClick={handleSubmit}>Summarize</button>
         </div>
         {buffering && (
           <div className="loader"></div>
         )}
         {transcriptSummary && (
           <div className="result">
-            <div id="original-video">
+            <div className="main-box-outer">
               <h2>Original Video</h2>
-              <div className="video-container">
+              <div className="main-box-inner video-box">
                 <iframe
+                  className="video-player"
                   title="YouTube Video Player" 
                   src={"https://www.youtube.com/embed/" + videoId}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen">
@@ -76,9 +78,9 @@ function App() {
               </div>
             </div>
 
-            <div id="video-summary">
+            <div className="main-box-outer">
               <h2>Video Summary</h2>
-              <div className="video-container">
+              <div className="main-box-inner text-box">
                 <p className="summary">{transcriptSummary}</p>
               </div>
             </div>
@@ -86,31 +88,33 @@ function App() {
         )}
         {commentSummary && (
           <div className="result">
-            <div id="comment-section">
-              <h2>Comment Section</h2>
-              <ul className="comment-list summary">
-                {comments.map((comment) => (
-                  <li key={comment.cid} className="comment-item">
-                    <img className="comment-profile" src={comment.photo} alt={comment.author}></img>
-                    <div className="comment-main">
-                      <p className="comment-header">
-                        <strong>{comment.author}</strong>
-                        <small>{comment.time}</small></p>
-                      <p className="comment-text">{comment.text}</p>
-                      <div className="comment-likes">
-                        <img src={process.env.PUBLIC_URL + '/thumbs-up.svg'} alt={"Like Button"}></img>
-                        <small className="comment-like-count">{comment.votes}</small>
+            <div className="main-box-outer">
+              <h2>Popular Comments</h2>
+              <div className="main-box-inner comment-box">
+                <ul className="comment-list">
+                  {comments.map((comment) => (
+                    <li key={comment.cid} className="comment-item">
+                      <img className="comment-profile" src={comment.photo} alt={comment.author}></img>
+                      <div className="comment-main">
+                        <p className="comment-header">
+                          <strong>{comment.author}</strong>
+                          <small>{comment.time}</small></p>
+                        <p className="comment-text">{comment.text.trim()}</p>
+                        <div className="comment-likes">
+                          <img src={process.env.PUBLIC_URL + '/thumbs-up.svg'} alt={"Like Button"}></img>
+                          <small className="comment-like-count">{comment.votes}</small>
+                        </div>
                       </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
-            <div id="comment-summary">
+            <div className="main-box-outer">
               <h2>Comment Summary</h2>
-              <div className="video-container">
-              <p className="summary">{commentSummary}</p>
+              <div className="main-box-inner text-box">
+                <p className="summary">{commentSummary}</p>
               </div>
             </div>
           </div>
