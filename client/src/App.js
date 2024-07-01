@@ -45,7 +45,7 @@ function App() {
 
   return (
     <div className="app">
-      <header className="app-main">
+      <div className="app-main">
         <div className="logo-title">
           <img className="app-logo" src={process.env.PUBLIC_URL + '/logo512.png'} alt="YT Rehashed Logo"></img>
           <h1>YT Rehashed</h1>
@@ -119,7 +119,7 @@ function App() {
             </div>
           </div>
         )}
-      </header>
+      </div>
     </div>
   );
 }
