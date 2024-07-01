@@ -17,16 +17,18 @@ This full-stack React-Flask web application is designed to help users quickly gr
 ## Features
 
 - Summarizes videos with only a link (no transcript needed)
+- Displays original video next to the video summary
 - Supports all lengths of Youtube videos up to 1 hour
-- Displays original video next to summary
+- Generates a summary of the top 100 popular comments
+- Displays the original comments section next to comment summary
 
 ## Usage
 
 Enter the link of your YouTube video and wait about 5-10 seconds for the video and summary to show up.
 
-![Before](images/usage_before.png)
+![Before](images/comment-summarizer-feature-1.png)
 
-![After](images/usage_after.png)
+![After](images/comment-summarizer-feature-2.png)
 
 ## Installation
 
