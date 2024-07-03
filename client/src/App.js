@@ -7,7 +7,7 @@ function App() {
   const [comments, setComments] = useState([]);
   const [transcriptSummary, setTranscriptSummary] = useState("");
   const [commentSummary, setCommentSummary] = useState("");
-  const [buffering, setBuffering] = useState("");
+  const [loader, setLoader] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,7 +16,7 @@ function App() {
     setTranscriptSummary("");
     setCommentSummary("");
     setVideoId("");
-    setBuffering(true);
+    setLoader(true);
 
     fetch('https://yt-rehashed-server.vercel.app/api/get-summary', {
       method: 'POST',
@@ -31,14 +31,14 @@ function App() {
         if (status !== 200) {
           throw new Error(body.message);
         }
-        setBuffering(false);
+        setLoader(false);
         setVideoId(body.video_id);
         setComments(body.comments)
         setTranscriptSummary(body.transcript_summary);
         setCommentSummary(body.comment_summary);
       })
       .catch(error => {
-        setBuffering(false);
+        setLoader(false);
         window.alert(error.message);
       });
   };
@@ -61,7 +61,7 @@ function App() {
           </input>
           <button className="submit-button" onClick={handleSubmit}>Summarize</button>
         </div>
-        {buffering && (
+        {loader && (
           <div className="loader"></div>
         )}
         {transcriptSummary && (
