@@ -1,9 +1,12 @@
 import './App.css';
 import React, { useState } from 'react';
 
+const proxyUrl = process.env.REACT_APP_PROXY_URL || 'http://localhost:8000';
+
 function App() {
   const [inputLink, setLink] = useState("");
   const [videoId, setVideoId] = useState("");
+  const [videoTitle, setVideoTitle] = useState("");
   const [comments, setComments] = useState([]);
   const [transcriptSummary, setTranscriptSummary] = useState("");
   const [commentSummary, setCommentSummary] = useState("");
@@ -11,14 +14,17 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    let videoUrl = inputLink;
+    const videoUrl = inputLink;
+
     setLink("");
+    setVideoId("");
+    setVideoTitle("");
+    setComments("")
     setTranscriptSummary("");
     setCommentSummary("");
-    setVideoId("");
     setLoader(true);
 
-    fetch('https://yt-rehashed-server.vercel.app/api/get-summary', {
+    fetch(proxyUrl + '/api/get-summary', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -33,7 +39,8 @@ function App() {
         }
         setLoader(false);
         setVideoId(body.video_id);
-        setComments(body.comments)
+        setVideoTitle(body.video_title);
+        setComments(body.comments);
         setTranscriptSummary(body.transcript_summary);
         setCommentSummary(body.comment_summary);
       })
@@ -42,6 +49,38 @@ function App() {
         window.alert(error.message);
       });
   };
+
+  const handleDownload = async (e) => {
+    e.preventDefault();
+
+    fetch(proxyUrl + '/api/download-video', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ videoId })
+    })
+      .then(response => {
+          if (!response.ok) {
+              throw new Error('Failed to download video');
+          }
+          return response.blob();
+      })
+      .then(blob => {
+          const downloadUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.setAttribute('download', `${videoTitle}.mp4`); // Default filename for unknown or misconfigured backend
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+      })
+      .catch(error => {
+          console.error('Error downloading video:', error);
+          window.alert('Failed to download video');
+      });
+  
+  }
 
   return (
     <div className="app">
@@ -64,10 +103,17 @@ function App() {
         {loader && (
           <div className="loader"></div>
         )}
+        {videoId && (
+          <p>Video ID = {videoId}</p>
+        )}
         {transcriptSummary && (
           <div className="result">
-            <div className="main-box-outer">
-              <h2>Original Video</h2>
+            <section className="main-box-outer">
+              <h2 className="section-title" id="download-title">Original Video
+                <button className="download-button" onClick={handleDownload}>
+                  <img className="download-icon" src="download.svg" alt="Download"></img>
+                </button>
+              </h2>
               <div className="main-box-inner video-box">
                 <iframe
                   className="video-player"
@@ -76,20 +122,20 @@ function App() {
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen">
                 </iframe>
               </div>
-            </div>
+            </section>
 
-            <div className="main-box-outer">
-              <h2>Video Summary</h2>
+            <section className="main-box-outer">
+              <h2 className="section-title">Video Summary</h2>
               <div className="main-box-inner text-box">
                 <p className="summary">{transcriptSummary}</p>
               </div>
-            </div>
+            </section>
           </div>
         )}
         {commentSummary && (
           <div className="result">
-            <div className="main-box-outer">
-              <h2>Popular Comments</h2>
+            <section className="main-box-outer">
+              <h2 className="section-title">Popular Comments</h2>
               <div className="main-box-inner comment-box">
                 <ul className="comment-list">
                   {comments.map((comment) => (
@@ -109,14 +155,14 @@ function App() {
                   ))}
                 </ul>
               </div>
-            </div>
+            </section>
 
-            <div className="main-box-outer">
-              <h2>Comment Summary</h2>
+            <section className="main-box-outer">
+              <h2 className="section-title">Comment Summary</h2>
               <div className="main-box-inner text-box">
                 <p className="summary">{commentSummary}</p>
               </div>
-            </div>
+            </section>
           </div>
         )}
       </div>
