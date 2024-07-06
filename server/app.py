@@ -23,9 +23,6 @@ CHATGPT_SUMMARIZATION_PROMPT = "Please provide two summaries in the following fo
 
 DOWNLOAD_FOLDER = os.path.join(os.getcwd(), 'downloads')
 
-if not os.path.exists(DOWNLOAD_FOLDER):
-    os.makedirs(DOWNLOAD_FOLDER)
-
 def extract_video_id(url):
     regex = r'(?:https?://)?(?:www\.)?(?:youtube\.com/(?:[^/\n\s]+/\S*/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be/)([a-zA-Z0-9_-]{11})'
     match = search(regex, url)
@@ -113,25 +110,46 @@ def get_summary():
     else:
         return jsonify({'message': 'This video is too long to summarize!'}), 400
 
-@app.route('/api/download-video', methods=['POST'])
-def download_video():
+@app.route('/api/get-downloads', methods=['POST'])
+def get_downloads():
     video_id = request.json.get('videoId')
     video_url = f"https://www.youtube.com/watch?v={video_id}"
     download_type = "video"
     
     try:
         yt = YouTube(video_url)
+        streams = yt.streams.filter(file_extension="mp4", type=download_type)
+        if streams:
+            resolutions = [int(stream.resolution[:-1]) for stream in streams]
+            resolutions = sorted(list(set([str(res) + 'p' for res in resolutions])))
+            
+            return jsonify({'resolutions': resolutions}), 200
+        else:
+           return jsonify({'resolutions': [], 'message': 'No streams available to download video!'}), 400
+    except VideoUnavailable:
+        return jsonify({'message': f'Video {video_url} is unavailable.'}), 400
+
+@app.route('/api/download-video', methods=['POST'])
+def download_video():
+    video_id = request.json.get('videoId')
+    selected_resolution = request.json.get('selectedResolution')
+    video_url = f"https://www.youtube.com/watch?v={video_id}"
+    download_type = "video"
+    print(selected_resolution)
+    
+    try:
+        yt = YouTube(video_url)
         print(f'Downloading video: {video_url}')
-        stream = yt.streams.filter(file_extension="mp4", type=download_type).first()
+        stream = yt.streams.filter(file_extension="mp4", res=selected_resolution, type=download_type).first()
         if stream:
             download_file_path = stream.download(output_path=DOWNLOAD_FOLDER)
-            video_title = yt.title
-            
+
             response = make_response(send_file(
                 download_file_path,
                 as_attachment=True,
                 mimetype='video/mp4'
             ))
+
             shutil.rmtree("downloads")
             return response, 200
         else:

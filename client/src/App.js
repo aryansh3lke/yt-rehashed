@@ -10,7 +10,13 @@ function App() {
   const [comments, setComments] = useState([]);
   const [transcriptSummary, setTranscriptSummary] = useState("");
   const [commentSummary, setCommentSummary] = useState("");
-  const [loader, setLoader] = useState(false);
+  
+  const [selectedResolution, setSelectedResolution] = useState("");
+  const [summaryLoader, setSummaryLoader] = useState(false);
+
+  const [downloadModal, setDownloadModal] = useState(false);
+  const [downloadOptions, setDownloadOptions] = useState([]);
+  const [downloadLoader, setDownloadLoader] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,7 +28,8 @@ function App() {
     setComments("")
     setTranscriptSummary("");
     setCommentSummary("");
-    setLoader(true);
+    setDownloadOptions("");
+    setSummaryLoader(true);
 
     fetch(proxyUrl + '/api/get-summary', {
       method: 'POST',
@@ -37,7 +44,7 @@ function App() {
         if (status !== 200) {
           throw new Error(body.message);
         }
-        setLoader(false);
+        setSummaryLoader(false);
         setVideoId(body.video_id);
         setVideoTitle(body.video_title);
         setComments(body.comments);
@@ -45,20 +52,47 @@ function App() {
         setCommentSummary(body.comment_summary);
       })
       .catch(error => {
-        setLoader(false);
+        setSummaryLoader(false);
         window.alert(error.message);
       });
   };
 
-  const handleDownload = async (e) => {
+  const displayDownloads = async (e) => {
     e.preventDefault();
+    setDownloadModal(true);
+    setDownloadLoader(true);
+    setDownloadOptions([]);
 
-    fetch(proxyUrl + '/api/download-video', {
+    fetch(proxyUrl + '/api/get-downloads', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ videoId })
+    })
+      .then(response => response.json()
+      .then(data => ({ status: response.status, body: data })))
+      .then(({ status, body }) => {
+        if (status !== 200) {
+          throw new Error(body.message);
+        }
+        setDownloadLoader(false);
+        setDownloadOptions(body.resolutions);
+      })
+      .catch(error => {
+        setDownloadLoader(false);
+        window.alert(error.message);
+      });
+  }
+
+  const downloadVideo = async (e) => {
+    e.preventDefault();
+    fetch(proxyUrl + '/api/download-video', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ videoId, selectedResolution })
     })
       .then(response => {
           if (!response.ok) {
@@ -70,7 +104,7 @@ function App() {
           const downloadUrl = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = downloadUrl;
-          link.setAttribute('download', `${videoTitle}.mp4`); // Default filename for unknown or misconfigured backend
+          link.setAttribute('download', `${videoTitle} [${selectedResolution}].mp4`); // Default filename for unknown or misconfigured backend
           document.body.appendChild(link);
           link.click();
           link.remove();
@@ -79,8 +113,11 @@ function App() {
           console.error('Error downloading video:', error);
           window.alert('Failed to download video');
       });
-  
   }
+
+  const handleResolutionChange = (event) => {
+    setSelectedResolution(event.target.value);
+  };
 
   return (
     <div className="app">
@@ -100,17 +137,14 @@ function App() {
           </input>
           <button className="submit-button" onClick={handleSubmit}>Summarize</button>
         </div>
-        {loader && (
+        {summaryLoader && (
           <div className="loader"></div>
-        )}
-        {videoId && (
-          <p>Video ID = {videoId}</p>
         )}
         {transcriptSummary && (
           <div className="result">
             <section className="main-box-outer">
               <h2 className="section-title" id="download-title">Original Video
-                <button className="download-button" onClick={handleDownload}>
+                <button className="download-button" onClick={displayDownloads}>
                   <img className="download-icon" src="download.svg" alt="Download"></img>
                 </button>
               </h2>
@@ -163,6 +197,34 @@ function App() {
                 <p className="summary">{commentSummary}</p>
               </div>
             </section>
+          </div>
+        )}
+        {downloadModal && (
+          <div>
+            <div className="modal active" id="modal">
+              {downloadLoader ? (
+                <div id="download-loader" className="loader"></div>
+              ): (
+                <div>
+                  <p className="modal-header">Select a resolution to download:</p>
+                  <div className="resolution-buttons">
+                    {downloadOptions.map((resolution) => (
+                      <label>
+                        <input 
+                          type="radio" 
+                          value={resolution}
+                          checked={resolution === selectedResolution}
+                          onChange={handleResolutionChange}
+                          name="options"/>
+                          {resolution}
+                      </label>
+                    ))}
+                  </div>
+                  <button onClick={downloadVideo}>Download Video</button>
+                </div>
+              )}
+            </div>
+            <div id="overlay"></div>
           </div>
         )}
       </div>
