@@ -15,7 +15,7 @@ function App() {
   const [summaryLoader, setSummaryLoader] = useState(false);
 
   const [downloadModal, setDownloadModal] = useState(false);
-  const [downloadOptions, setDownloadOptions] = useState([]);
+  const [downloadOptions, setDownloadOptions] = useState(null);
   const [downloadLoader, setDownloadLoader] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -59,30 +59,36 @@ function App() {
 
   const displayDownloads = async (e) => {
     e.preventDefault();
-    setDownloadModal(true);
-    setDownloadLoader(true);
-    setDownloadOptions([]);
 
-    fetch(proxyUrl + '/api/get-downloads', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ videoId })
-    })
-      .then(response => response.json()
-      .then(data => ({ status: response.status, body: data })))
-      .then(({ status, body }) => {
-        if (status !== 200) {
-          throw new Error(body.message);
-        }
-        setDownloadLoader(false);
-        setDownloadOptions(body.resolutions);
+    if (!downloadOptions) {
+      setDownloadModal(true);
+      setDownloadLoader(true);
+      setDownloadOptions([]);
+  
+      fetch(proxyUrl + '/api/get-downloads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ videoId })
       })
-      .catch(error => {
-        setDownloadLoader(false);
-        window.alert(error.message);
-      });
+        .then(response => response.json()
+        .then(data => ({ status: response.status, body: data })))
+        .then(({ status, body }) => {
+          if (status !== 200) {
+            throw new Error(body.message);
+          }
+          setDownloadLoader(false);
+          setDownloadOptions(body.resolutions);
+        })
+        .catch(error => {
+          setDownloadLoader(false);
+          window.alert(error.message);
+        });
+    } else {
+      setDownloadModal(true);
+    }
+    
   }
 
   const downloadVideo = async (e) => {
@@ -115,8 +121,12 @@ function App() {
       });
   }
 
-  const handleResolutionChange = (event) => {
-    setSelectedResolution(event.target.value);
+  const handleResolutionChange = (e) => {
+    setSelectedResolution(e.target.value);
+  };
+
+  const closeDownloadPanel = (e) => {
+    setDownloadModal(false);
   };
 
   return (
@@ -202,30 +212,39 @@ function App() {
         {downloadModal && (
           <div>
             <div className="modal active" id="modal">
+              <button className="close-button" onClick={closeDownloadPanel}>&times;</button>
+              <div>
+                <div className="modal-header">
+                  <h4 className="modal-title">Select a resolution to download:</h4>
+              </div>
               {downloadLoader ? (
-                <div id="download-loader" className="loader"></div>
-              ): (
-                <div>
-                  <p className="modal-header">Select a resolution to download:</p>
-                  <div className="resolution-buttons">
-                    {downloadOptions.map((resolution) => (
-                      <label>
-                        <input 
-                          type="radio" 
-                          value={resolution}
-                          checked={resolution === selectedResolution}
-                          onChange={handleResolutionChange}
-                          name="options"/>
-                          {resolution}
-                      </label>
-                    ))}
+                  <div id="download-loader" className="loader"></div>
+                ): (
+                  <div id="download-result">
+                    <ul className="resolution-buttons">
+                      {downloadOptions.map((resolution) => (
+                        <li>
+                          <input 
+                            type="radio"
+                            id={resolution}
+                            value={resolution}
+                            checked={resolution === selectedResolution}
+                            onChange={handleResolutionChange}
+                            name="options"/>
+                            <label for={resolution}>{resolution}</label>
+                        </li>
+                      ))}
+                    </ul>
+                    <button className="submit-button" onClick={downloadVideo}>
+                      <p className="download-text">Download Video</p>
+                      <img className="download-icon-large inverted-icon" src="download.svg" alt="Download"></img>
+                      </button>
                   </div>
-                  <button onClick={downloadVideo}>Download Video</button>
-                </div>
-              )}
+                )}
             </div>
-            <div id="overlay"></div>
           </div>
+          <div id="overlay"></div>
+        </div>
         )}
       </div>
     </div>
