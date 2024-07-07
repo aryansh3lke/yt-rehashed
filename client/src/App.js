@@ -93,32 +93,36 @@ function App() {
 
   const downloadVideo = async (e) => {
     e.preventDefault();
-    fetch(proxyUrl + '/api/download-video', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ videoId, selectedResolution })
-    })
-      .then(response => {
-          if (!response.ok) {
-              throw new Error('Failed to download video');
-          }
-          return response.blob();
+    if (selectedResolution === "") {
+      window.alert("Please select a resolution!");
+    } else {
+      fetch(proxyUrl + '/api/download-video', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ videoId, selectedResolution })
       })
-      .then(blob => {
-          const downloadUrl = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = downloadUrl;
-          link.setAttribute('download', `${videoTitle} [${selectedResolution}].mp4`); // Default filename for unknown or misconfigured backend
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-      })
-      .catch(error => {
-          console.error('Error downloading video:', error);
-          window.alert('Failed to download video');
-      });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to download video');
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.setAttribute('download', `${videoTitle} [${selectedResolution}].mp4`); // Default filename for unknown or misconfigured backend
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        })
+        .catch(error => {
+            console.error('Error downloading video:', error);
+            window.alert('Failed to download video');
+        });
+    }
   }
 
   const handleResolutionChange = (e) => {
