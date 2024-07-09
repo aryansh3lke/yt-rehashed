@@ -222,6 +222,7 @@ h3 {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
+    gap: 5px 0;
     align-items: center;
     list-style-type: none;
     padding: 0;
@@ -261,6 +262,7 @@ h3 {
   border-radius: 8px;
   cursor: pointer;
   z-index: 90;
+  font-size: 20px;
 }
 .resolution-buttons label:hover {
   background: #DDD;
