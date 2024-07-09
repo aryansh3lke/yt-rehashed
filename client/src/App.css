@@ -212,18 +212,20 @@ h3 {
     background-color: rgba(0, 0, 0, .5);
     pointer-events: none;
 }
-/* .overlay.active {
+.overlay.active {
     opacity: 1;
     pointer-events: all;
-} */
+}
 
 /* Resolution Selection */
 .resolution-buttons {
     display: flex;
     justify-content: center;
+    flex-wrap: wrap;
     align-items: center;
     list-style-type: none;
     padding: 0;
+    margin-bottom: 30px;
 }
 .resolution-buttons li {
     float: left;
@@ -234,12 +236,16 @@ h3 {
 }
 .resolution-buttons label,
 .resolution-buttons input {
-  display: block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
+  background-color: white;
+  color: var(--bg-color);
 }
 .resolution-buttons input[type="radio"] {
     opacity: 0.01;
@@ -247,12 +253,11 @@ h3 {
 }
 .resolution-buttons input[type="radio"]:checked+label,
 .Checked+label {
-  background: red;
+  background: lime;
 }
 
 .resolution-buttons label {
   padding: 5px;
-  border: 1px solid #CCC;
   border-radius: 8px;
   cursor: pointer;
   z-index: 90;
