@@ -338,7 +338,7 @@ h3 {
 }
 
 /* Medium-sized devices (1200px and below) */
-@media only screen and (max-width: 1200px) {
+@media only screen and (min-width:600px) and (max-width: 1200px) {
     .result {
         display: flex;
         align-items: center;
