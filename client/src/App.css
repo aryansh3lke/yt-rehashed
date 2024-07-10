@@ -374,8 +374,16 @@ h3 {
         height: calc(30px + 15vw);
     }
 
+    .result {
+        margin: 0px 10px;
+    }
+
     .section-title {
-        font-size: calc(20px + 2vw);
+        font-size: calc(18px + 2vw);
+    }
+
+    #download-title {
+        gap: 0.5rem;
     }
 
     h3 {
@@ -396,14 +404,28 @@ h3 {
         gap: 0.75rem;
     }
 
+    .main-box-outer {
+        width: calc(250px + 20vw);
+        margin: 0 10%;
+    }
+
     .input-box {
-        font-size: calc(10px + 2vmin);
-        width: calc(300px + 5vw);
+        font-size: calc(10px + 2vw);
+        max-width: 70%;
     }
 
     .submit-button {
         font-size: calc(10px + 2.5vw);
         width: calc(30px + 30vw);
+    }
+
+    .download-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .video-box {
+        min-height: 45vw;
     }
 
     .comment-box {
