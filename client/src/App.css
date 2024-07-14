@@ -366,6 +366,11 @@ h3 {
     .text-box {
         height: 100%;
     }
+
+    .close-button {
+        font-size: 2rem;
+        right: 2.5px;
+    }
 }
 
 /* Mobile devices (600px and below) */
