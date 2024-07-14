@@ -1,12 +1,16 @@
+import boto3
+from botocore.exceptions import NoCredentialsError, ClientError
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, send_file
 from flask_cors import CORS
 from itertools import islice
 from openai import OpenAI, OpenAIError
+from os import getenv
 from pytubefix import YouTube
 from pytubefix.exceptions import VideoUnavailable, RegexMatchError
 from re import search
 import requests
+from requests.exceptions import HTTPError
 import tiktoken
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_comment_downloader import YoutubeCommentDownloader, SORT_BY_POPULAR
@@ -18,6 +22,16 @@ load_dotenv()
 client = OpenAI()
 downloader = YoutubeCommentDownloader()
 
+# Configure S3 client
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id = getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key = getenv('AWS_SECRET_ACCESS_KEY'),
+    region_name = getenv('AWS_S3_REGION')
+)
+bucket_name = getenv('AWS_S3_BUCKET_NAME')
+
+# ChatGPT-3.5-turbo Model
 CHATGPT_TOKEN_LIMIT = 16385
 RESPONSE_TOKEN_LIMIT = 500
 REQUEST_TOKEN_LIMIT = CHATGPT_TOKEN_LIMIT - RESPONSE_TOKEN_LIMIT
@@ -314,7 +328,7 @@ def get_resolutions():
         return jsonify({'error': f'VideoUnavailable: {str(e)}'}), 400
     except RegexMatchError as e:
         return jsonify({'error': f'RegexMatchError: {str(e)}'}), 400
-    except requests.exceptions.HTTPError as e:
+    except HTTPError as e:
         return jsonify({'error': str(e)}), e.response.status_code
     
 @app.route('/api/get-download', methods=['GET'])
@@ -368,13 +382,14 @@ def get_download():
         return jsonify({'error': f'VideoUnavailable: {str(e)}'}), 400
     except RegexMatchError as e:
         return jsonify({'error': f'RegexMatchError: {str(e)}'}), 400
-    except requests.exceptions.HTTPError as e:
+    except HTTPError as e:
         return jsonify({'error': str(e)}), e.response.status_code
 
 @app.route('/api/download-video', methods=['GET'])
 def download_video():
     """
-    Download a video file from a given download URL and stream it to the client.
+    Download a video file from a given download URL, upload it to Amazon S3, and
+    return a pre-signed URL for the client.
 
     HTTP Method: GET
 
@@ -384,10 +399,10 @@ def download_video():
         video_resolution (str): The resolution of the video to use for the download's file name. (required)
 
     Responses:
-        200: A stream of the video file with appropriate headers for download.
+        200: A JSON object containing the pre-signed URL for the uploaded video.
         400: Missing parameters or invalid download URL.
-        500: An error occurred during the download process.
-    
+        500: An error occurred during the download or upload process.
+
     Example:
         GET /api/download-video?download_url=https://example.com/video.mp4&video_title=SampleVideo&video_resolution=720p
     """
@@ -408,22 +423,31 @@ def download_video():
     try:
         # Fetch video from the provided URL
         response = requests.get(download_url, stream=True)
-        response.raise_for_status()  # Raise HTTPError if HTTP request returned unsuccessful status code
-    except requests.exceptions.HTTPError as e:
+
+        # Raise HTTPError if HTTP request returned unsuccessful status code
+        response.raise_for_status()
+
+        # Upload the video to S3
+        s3_key = f"{video_title} [{video_resolution}].mp4"
+        s3_client.upload_fileobj(response.raw, bucket_name, s3_key)
+
+        # Generate a pre-signed URL for the uploaded video
+        pre_signed_url = s3_client.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': bucket_name, 'Key': s3_key},
+            ExpiresIn=3600  # URL expiration time in seconds
+        )
+
+        return jsonify({'pre_signed_url': pre_signed_url}), 200
+
+    except HTTPError as e:
         return jsonify({'error': str(e)}), e.response.status_code
-
-    # Prepare headers for response
-    headers = {
-        'Content-Disposition': f'attachment; filename="{video_title} [{video_resolution}].mp4"',
-        'Content-Type': 'video/mp4',
-    }
-
-    # Add Content-Length header if available (creates download progress bar)
-    if 'Content-Length' in response.headers:
-        headers['Content-Length'] = response.headers['Content-Length']
-
-    # Return response with appropriate headers and content (status = 200)
-    return Response(response.iter_content(chunk_size=1024), headers=headers)
+    except NoCredentialsError:
+        return jsonify({'error': 'Credentials not available'}), 500
+    except ClientError as e:
+        return jsonify({'error': str(e)}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8000, debug=True)
