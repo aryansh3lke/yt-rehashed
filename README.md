@@ -16,7 +16,7 @@ This full-stack React-Flask web application is designed to help users quickly gr
 
 ## Features
 
-- Summarizes videos with only a link (no transcript needed)
+- Summarizes videos with only a link
 - Displays original video next to the video summary
 - Video downloader to download original video at different resolutions
 - Supports all lengths of Youtube videos up to 1 hour
@@ -69,19 +69,57 @@ Follow these steps to set up YT Rehashed locally:
 
 https://platform.openai.com/api-keys
 
-> IMPORTANT: You will need to deposit some money into your OpenAI account to use the API.
+> IMPORTANT: You need to deposit some money into your OpenAI account to use the API.
 
 #### 8. Add an environment variable for the key in a .env file
 
-`OPENAI_API_KEY=[add your key here]`
+`OPENAI_API_KEY=your_api_key`
 
 > NOTE: Make sure to place the `.env` file in the `/server/` directory.
 
-#### 9. Start the Flask backend server
+#### 9. Create an AWS S3 Bucket
+
+https://aws.amazon.com/s3/
+
+#### 10. Collect values for the following environment variables and add them
+
+```
+AWS_ACCESS_KEY_ID=your_access_key_id
+AWS_SECRET_ACCESS_KEY=your_secret_access_key
+AWS_S3_BUCKET_NAME=your_bucket_name
+AWS_S3_REGION=your_region
+```
+
+#### 11. Add the following bucket policy for your AWS S3 bucket
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::your-account-id:user/your-iam-user"
+      },
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::your-s3-bucket-name",
+        "arn:aws:s3:::your-s3-bucket-name/*"
+      ]
+    }
+  ]
+}
+```
+
+#### 12. Start the Flask backend server
 
 `python app.py`
 
-#### 10. View the website locally
+#### 13. View the website locally
 
 http://localhost:3000
 
