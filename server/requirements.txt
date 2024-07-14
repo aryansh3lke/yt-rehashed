@@ -3,6 +3,7 @@ Flask-Cors==4.0.1
 openai==1.33.0
 python-dotenv==0.21.0
 pytube==15.0.0
+pytubefix==6.1.1
 tiktoken==0.7.0
 youtube-transcript-api==0.6.2
 youtube-comment-downloader==0.1.76
