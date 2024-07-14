@@ -25,11 +25,17 @@ This full-stack React-Flask web application is designed to help users quickly gr
 
 ## Usage
 
-Enter the link of your YouTube video and wait about 5-10 seconds for the video, comments, and summaries to show up.
+### 1. Enter the link of your YouTube video
 
 ![Before](images/usage-before.png)
 
+### 2. After about 5-10 seconds, the original video, comments, and summaries will show up.
+
 ![After](images/usage-after.png)
+
+### 3. Download the original video at different resolutions.
+
+![Video Downloader Feature](images/download-feature-2.png)
 
 ## Installation
 
