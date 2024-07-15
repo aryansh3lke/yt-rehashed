@@ -176,10 +176,10 @@ h3 {
     padding: 20px;
 }
 .modal-header {
-    padding: 10px 15px;
     display: flex;
     justify-content: center;
     align-items: center;
+    margin: 0;
 }
 .modal-title {
     font-size: 24px;
@@ -217,7 +217,14 @@ h3 {
     pointer-events: all;
 }
 
-/* Resolution Selection */
+/* Download Result */
+#download-result{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1.25rem;
+}
 .resolution-buttons {
     display: flex;
     justify-content: center;
@@ -226,7 +233,7 @@ h3 {
     align-items: center;
     list-style-type: none;
     padding: 0;
-    margin-bottom: 30px;
+    margin: 0;
 }
 .resolution-buttons li {
     float: left;
@@ -256,7 +263,6 @@ h3 {
 .Checked+label {
   background: lime;
 }
-
 .resolution-buttons label {
   padding: 5px;
   border-radius: 8px;

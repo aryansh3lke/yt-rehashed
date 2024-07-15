@@ -132,13 +132,28 @@ function App() {
           video_resolution: body.video_resolution
         };
         const queryString = Object.keys(params).map(key => key + '=' + encodeURIComponent(params[key])).join('&');
+        const videoResolution = body.videoResolution;
         
-        // create link element for request to start download as a file attachment
-        const link = document.createElement('a');
-        link.href = `${requestUrl}?${queryString}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        fetch(`${requestUrl}?${queryString}`)
+          .then(downloadResponse => downloadResponse.json()
+          .then(downloadData => ({ downloadStatus: downloadResponse.status, downloadBody: downloadData })))
+          .then(({ downloadStatus, downloadBody }) => {
+              if (downloadStatus !== 200) {
+                  throw new Error(downloadBody.error);
+              }
+              const preSignedUrl = downloadBody.pre_signed_url;
+
+              // Create a temporary anchor element to trigger the download
+              const link = document.createElement('a');
+              link.href = preSignedUrl;
+              link.download = `${videoTitle} [${videoResolution}].mp4`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+          })
+          .catch(error => {
+              window.alert(error.message);
+          });
       })
       .catch(error => {
         window.alert(error.message);
@@ -164,7 +179,7 @@ function App() {
           </input>
           <button className="submit-button" onClick={generateSummaries}>Summarize</button>
         </div>
-        
+
         {summaryLoader && (
           <div className="loader"></div>
         )}
@@ -239,34 +254,34 @@ function App() {
                   <div id="download-loader" className="loader"></div>
                 ): (
                   <div>
-                      {downloadResolutions && downloadResolutions.length > 0 ? (
-                        <div id="download-result">
-                          <div className="modal-header">
-                            <h4 className="modal-title">Select a resolution to download:</h4>
-                          </div>
-                          <ul className="resolution-buttons">
-                            {downloadResolutions.map((resolution, index) => (
-                              <li key={index}>
-                                <input 
-                                  type="radio"
-                                  id={resolution}
-                                  value={resolution}
-                                  checked={resolution === selectedResolution}
-                                  onChange={ (e) => {setSelectedResolution(e.target.value)} }
-                                  name="options"/>
-                                  <label htmlFor={resolution}>{resolution}</label>
-                              </li>
-                            ))}
-                          </ul>
-                          <button className="submit-button" onClick={downloadVideo}>
-                            <p className="download-text">Download Video</p>
-                            <img className="download-icon-large inverted-icon" src="download.svg" alt="Download"></img>
-                          </button>
+                    {downloadResolutions && downloadResolutions.length > 0 ? (
+                      <div id="download-result">
+                        <div className="modal-header">
+                          <h4 className="modal-title">Select a resolution to download:</h4>
                         </div>
-                      ) : (
-                        <h3>No downloads available.</h3>
-                      )
-                      }
+                        <ul className="resolution-buttons">
+                          {downloadResolutions.map((resolution, index) => (
+                            <li key={index}>
+                              <input 
+                                type="radio"
+                                id={resolution}
+                                value={resolution}
+                                checked={resolution === selectedResolution}
+                                onChange={ (e) => {setSelectedResolution(e.target.value)} }
+                                name="options"/>
+                                <label htmlFor={resolution}>{resolution}</label>
+                            </li>
+                          ))}
+                        </ul>
+                        <button className="submit-button" onClick={downloadVideo}>
+                          <p className="download-text">Download Video</p>
+                          <img className="download-icon-large inverted-icon" src="download.svg" alt="Download"></img>
+                        </button>
+                      </div>
+                    ) : (
+                      <h3>No downloads available.</h3>
+                    )
+                    }
                   </div>
                 )}
             </div>
