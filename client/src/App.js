@@ -46,7 +46,9 @@ function App() {
       .then(response => response.json()
       .then(data => ({ status: response.status, body: data })))
       .then(({ status, body }) => {
-        if (status !== 200) {
+        if (status === 504) {
+          throw new Error('The summarizer is currently down. Please try again later.');
+        } else if (status !== 200) {
           throw new Error(body.error);
         }
 
@@ -84,7 +86,9 @@ function App() {
         .then(response => response.json()
         .then(data => ({ status: response.status, body: data })))
         .then(({ status, body }) => {
-          if (status !== 200) {
+          if (status === 504) {
+            throw new Error('The summarizer is currently down. Please try again later.');
+          } else if (status !== 200) {
             throw new Error(body.error);
           }
           setDownloadLoader(false);
@@ -120,7 +124,9 @@ function App() {
       .then(response => response.json()
       .then(data => ({ status: response.status, body: data })))
       .then(({ status, body }) => {
-        if (status !== 200) {
+        if (status === 504) {
+          throw new Error('The downloader is currently down. Please try again later.');
+        } else if (status !== 200) {
           throw new Error(body.error);
         }
 
@@ -138,24 +144,27 @@ function App() {
           .then(downloadResponse => downloadResponse.json()
           .then(downloadData => ({ downloadStatus: downloadResponse.status, downloadBody: downloadData })))
           .then(({ downloadStatus, downloadBody }) => {
-              if (downloadStatus !== 200) {
-                  throw new Error(downloadBody.error);
-              }
-              const preSignedUrl = downloadBody.pre_signed_url;
+            if (downloadStatus === 504) {
+              throw new Error('The downloader is currently down. Please try again later.');
+            } else if (downloadStatus !== 200) {
+                throw new Error(downloadBody.error);
+            }
+            const preSignedUrl = downloadBody.pre_signed_url;
 
-              // Create a temporary anchor element to trigger the download
-              const link = document.createElement('a');
-              link.href = preSignedUrl;
-              link.download = `${videoTitle} [${videoResolution}].mp4`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
+            // Create a temporary anchor element to trigger the download
+            const link = document.createElement('a');
+            link.href = preSignedUrl;
+            link.download = `${videoTitle} [${videoResolution}].mp4`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
           })
           .catch(error => {
-              window.alert(error.message);
+            window.alert(error.message);
           });
       })
       .catch(error => {
+        setDownloadModal(false);
         window.alert(error.message);
       });
     }

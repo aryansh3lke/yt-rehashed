@@ -1,7 +1,7 @@
 import boto3
 from botocore.exceptions import NoCredentialsError, ClientError
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, Response, send_file
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from itertools import islice
 from openai import OpenAI, OpenAIError
@@ -450,4 +450,4 @@ def download_video():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    app.run(host='0.0.0.0', port=8000)
