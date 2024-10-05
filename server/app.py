@@ -451,4 +451,7 @@ def download_video():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":
-    serve(app, host='0.0.0.0', port=8000)
+    if getenv('FLASK_DEBUG', False): # development
+        app.run(host="0.0.0.0", port=8000, debug=True)
+    else: # production
+        serve(app, host="0.0.0.0", port=8000)
