@@ -2,7 +2,7 @@ import boto3
 from botocore.exceptions import NoCredentialsError, ClientError
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, Response, send_file
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from itertools import islice
 from openai import OpenAI, OpenAIError
 from os import getenv
@@ -94,7 +94,7 @@ def fetch_transcript(video_url):
         >>> fetch_transcript("https://invalid.url")
         None
     """
-    
+
     # Set the headers
     transcript_api_headers = {
         "Authorization": f"Bearer {BRIGHT_DATA_API_TOKEN}",
@@ -102,9 +102,7 @@ def fetch_transcript(video_url):
     }
 
     # Set the data (YouTube video URLs)
-    data = [
-        {"url": video_url},
-    ]
+    data = [{"url": video_url}]
 
     # API endpoint
     transcript_api_url = "https://api.brightdata.com/datasets/v3/trigger?dataset_id=gd_lk56epmy2i5g7lzu0k"
@@ -239,6 +237,7 @@ def hello():
     return "You have reached the Youtube Rehashed Flask backend server!"
 
 @app.route('/api/get-summaries', methods=['GET'])
+@cross_origin()
 def get_summaries():
     """
     Return video details, comments, and summaries for given YouTube video.
