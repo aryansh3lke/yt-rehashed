@@ -12,8 +12,8 @@ from re import search
 import requests
 from requests.exceptions import HTTPError
 import tiktoken
+import time
 from waitress import serve
-from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_comment_downloader import YoutubeCommentDownloader, SORT_BY_POPULAR
 
 app = Flask(__name__)
@@ -22,6 +22,9 @@ CORS(app)
 load_dotenv()
 client = OpenAI()
 downloader = YoutubeCommentDownloader()
+
+# Load Bright Data API token
+BRIGHT_DATA_API_TOKEN = getenv("BRIGHT_DATA_API_TOKEN")
 
 # Configure S3 client
 s3_client = boto3.client(
@@ -69,33 +72,72 @@ def extract_video_id(url):
     match = search(regex, url)
     return match.group(1) if match else None
 
-def fetch_captions(video_id):
+def fetch_transcript(video_url):
     """
-    Fetch captions for a given YouTube video ID.
+    Fetch the transcript for a given YouTube video URL.
 
-    This function uses the YouTubeTranscriptApi to retrieve the captions (subtitles) for a specified YouTube video.
-    If the captions cannot be retrieved, it returns None.
+    This function sends a POST request to the BrightData API to initiate the retrieval of a transcript 
+    for the specified YouTube video. It handles the API response, extracts the snapshot ID from a successful 
+    request, and attempts to fetch the transcript data with retry logic in case of failure.
 
     Args:
-        video_id (str): The ID of the YouTube video.
+        video_url (str): The URL of the YouTube video for which to fetch the transcript.
 
     Returns:
-        list: A list of caption dictionaries if captions are found.
-        None: If an error occurs or captions are not available.
+        str: The transcript text if successfully retrieved, otherwise None.
 
     Examples:
-        >>> fetch_captions("abc123XYZ")
-        [{'start': 0.0, 'duration': 4.0, 'text': 'Hello world'}, ...]
-        >>> fetch_captions("invalid_id")
+        >>> fetch_transcript("https://www.youtube.com/watch?v=abc123XYZ")
+        'This is the transcript text of the video.'
+        >>> fetch_transcript("https://youtu.be/abc123XYZ")
+        'This is the transcript text of the video.'
+        >>> fetch_transcript("https://invalid.url")
         None
     """
-
-    try:
-        captions = YouTubeTranscriptApi.get_transcript(video_id)
-    except:
-        return None
     
-    return captions
+    # Set the headers
+    transcript_api_headers = {
+        "Authorization": f"Bearer {BRIGHT_DATA_API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    # Set the data (YouTube video URLs)
+    data = [
+        {"url": video_url},
+    ]
+
+    # API endpoint
+    transcript_api_url = "https://api.brightdata.com/datasets/v3/trigger?dataset_id=gd_lk56epmy2i5g7lzu0k"
+
+    # Send the POST request
+    response = requests.post(transcript_api_url, headers=transcript_api_headers, json=data)
+
+    # Print the response
+    if response.status_code != 200:
+        print(f"Request failed with status code {response.status_code}")
+        print(response.text)
+        return None
+    else:
+        print("First request was successful!")
+        print(response.json(), '\n\n\n')
+
+    # Extract the snapshot ID from the successful request
+    snapshot_id =response.json()['snapshot_id']
+
+    # Endpoint to get results for the snapshot ID
+    snapshot_url = f" https://api.brightdata.com/datasets/v3/snapshot/{snapshot_id}?format=json"
+
+    for attempt in range(3):  # Try a maximum of 4 times
+        response = requests.get(snapshot_url, headers=transcript_api_headers)
+
+        if response.status_code == 200:
+            return response.json()[0]['transcript']  # Return the successful response
+        else:
+            print(f"Attempt {attempt + 1} failed: {response.json()}")
+            time.sleep(3)  # Wait for 5 seconds before retrying
+
+    print("Max attempts reached. Failed to fetch snapshot.")
+    return None
 
 def get_comments(video_url, comment_count=100):
     """
@@ -227,15 +269,12 @@ def get_summaries():
     if video_id is None:
         return jsonify({'error': 'Please enter a valid YouTube URL!'}), 400
 
-    # Fetch captions with the YouTube Transcript API
-    captions = fetch_captions(video_id)
-    if captions is None:
+    # Fetch YouTube transcript using Bright Data API endpoint
+    transcript = fetch_transcript(video_url)
+    if transcript is None:
         return jsonify({'error': 'YouTube video does not exist or is missing a transcript!'}), 400
-    
-    # Create transcript by merging captions
-    transcript = ' '.join([caption['text'] for caption in captions])
-
-    # Get web-scraped comments from YouTube Comment Downloader API
+        
+    # Get web-scraped comments from the YouTube Comment Downloader API
     comments, comments_str = get_comments(video_url)
     if comments is None:
         return jsonify({'error': 'Comments could not be retrieved for this video!'}), 500
