@@ -12,6 +12,7 @@ from re import search
 import requests
 from requests.exceptions import HTTPError
 import tiktoken
+from waitress import serve
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_comment_downloader import YoutubeCommentDownloader, SORT_BY_POPULAR
 
@@ -450,4 +451,4 @@ def download_video():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    serve(app, host='0.0.0.0', port=8000)
