@@ -18,7 +18,7 @@ This full-stack React-Flask web application is designed to help users quickly gr
 
 - Summarizes videos with only a link
 - Displays original video next to the video summary
-- Video downloader to download original video at different resolutions
+- Video downloader to download original video at the available resolutions
 - Supports all lengths of Youtube videos up to 1 hour
 - Generates a summary of the top 100 popular comments
 - Displays the original comments section next to the comment summary
