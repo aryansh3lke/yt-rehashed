@@ -1,6 +1,6 @@
 # YT Rehashed
 
-A tool to quickly generate quality summaries of YouTube videos. Summarize your videos here: [ytrehashed.com](ytrehashed.com)
+An AI tool to quickly generate quality summaries of YouTube videos. Summarize your videos here: [ytrehashed.com](ytrehashed.com)
 
 ## Table of Contents
 
