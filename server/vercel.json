@@ -1,9 +1,20 @@
 {
-    "version": 2,
-    "builds": [
-      { "src": "app.py", "use": "@vercel/python" }
-    ],
-    "routes": [
-      { "src": "/(.*)", "dest": "/app.py" }
-    ]
+  "version": 2,
+  "builds": [
+    { "src": "app.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "/app.py" }
+  ],
+  "functions": {
+    "api/test.js": {
+      "maxDuration": 30
+    },
+    "api/*.js": {
+      "maxDuration": 30
+    },
+    "src/api/*.js": {
+      "maxDuration": 30 
+    }
   }
+}
