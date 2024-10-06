@@ -42,10 +42,7 @@ function App() {
     setSelectedResolution("");
     setSummaryLoader(true);
 
-    fetch(PROXY_URL + `/api/get-summaries?video_url=${videoUrl}`,{
-      method: 'GET',
-      mode: 'no-cors'
-    })
+    fetch(PROXY_URL + `/api/get-summaries?video_url=${videoUrl}`)
       .then(response => response.json()
       .then(data => ({ status: response.status, body: data })))
       .then(({ status, body }) => {
