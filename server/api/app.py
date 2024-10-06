@@ -2,7 +2,6 @@ import boto3
 from botocore.exceptions import NoCredentialsError, ClientError
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, Response, send_file
-from flask_cors import CORS, cross_origin
 from itertools import islice
 from openai import OpenAI, OpenAIError
 from os import getenv
@@ -17,7 +16,6 @@ from waitress import serve
 from youtube_comment_downloader import YoutubeCommentDownloader, SORT_BY_POPULAR
 
 app = Flask(__name__)
-CORS(app)
 
 load_dotenv()
 client = OpenAI()
