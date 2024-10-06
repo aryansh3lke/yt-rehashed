@@ -488,8 +488,18 @@ def download_video():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Flask CORS configurations
+@app.after_request
+def after_request(response):
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+  response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+  return response
+
 if __name__ == "__main__":
-    if getenv('FLASK_DEBUG', False): # development
+    # development
+    if getenv('FLASK_DEBUG', False):
         app.run(host="0.0.0.0", port=8000, debug=True)
-    else: # production
+    # production
+    else:
         serve(app, host="0.0.0.0", port=8000)
