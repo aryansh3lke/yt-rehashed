@@ -17,7 +17,7 @@ from waitress import serve
 from youtube_comment_downloader import YoutubeCommentDownloader, SORT_BY_POPULAR
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "https://www.ytrehashed.com"}})
 
 load_dotenv()
 client = OpenAI()
