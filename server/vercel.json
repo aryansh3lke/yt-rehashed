@@ -7,19 +7,5 @@
     "api/*.py": {
       "maxDuration": 30
     }
-  },
-  "headers": [
-    {
-      "key": "Access-Control-Allow-Origin",
-      "value": "https://www.ytrehashed.com"
-    },
-    {
-      "key": "Access-Control-Allow-Methods",
-      "value": "GET,OPTIONS"
-    },
-    {
-      "key": "Access-Control-Allow-Headers",
-      "value": "Content-Type, Authorization"
-    }
-  ]
+  }
 }
