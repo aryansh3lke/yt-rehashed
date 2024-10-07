@@ -1,0 +1,8 @@
+[build]
+commands = [
+  "apt-get update",
+  "apt-get install -y ffmpeg"
+]
+
+[start]
+command = "ffmpeg -version && python app.py"
