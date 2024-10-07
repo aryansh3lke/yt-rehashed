@@ -9,3 +9,4 @@ tiktoken==0.7.0
 youtube-transcript-api==0.6.2
 youtube-comment-downloader==0.1.76
 waitress==3.0.0
+yt-dlp==2022.3.10
