@@ -6,7 +6,6 @@ from flask_cors import CORS
 from itertools import islice
 from openai import OpenAI, OpenAIError
 from os import getenv, remove
-from pytube import YouTube
 from re import search
 import requests
 from requests.exceptions import HTTPError
@@ -278,6 +277,36 @@ def ask_chatgpt(prompt, system_role):
     except Exception as e:
         return None, {str(e)}
 
+def get_youtube_video_title(video_url):
+    """
+    Retrieve the title of a YouTube video from its URL.
+
+    This function uses the yt-dlp library to extract the title of a YouTube video from the provided URL.
+
+    Args:
+        video_url (str): The URL of the YouTube video.
+
+    Returns:
+        str: The title of the YouTube video if successful, or None if the title could not be retrieved.
+
+    Examples:
+        >>> get_youtube_video_title("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        'Rick Astley - Never Gonna Give You Up (Official Music Video)'
+        >>> get_youtube_video_title("invalid_url")
+        None
+    """
+     
+    ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+        'skip_download': True,
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info_dict = ydl.extract_info(video_url, download=False)
+        video_title = info_dict.get('title', None)
+        return video_title
+
 @app.route('/')
 def hello():
     return "You have reached the Youtube Rehashed Flask backend server!"
@@ -356,7 +385,7 @@ def get_summaries():
                 return jsonify({'error': comments_error}), 500
             else:
                 return jsonify({'video_id': video_id,
-                                'video_title': YouTube(video_url).title,
+                                'video_title': get_youtube_video_title(video_url),
                                 'comments': comments,
                                 'transcript_summary': transcript_summary, 
                                 'comments_summary': comments_summary}), 200
