@@ -1,23 +1,25 @@
 import boto3
 from botocore.exceptions import NoCredentialsError, ClientError
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file, after_this_request
 from flask_cors import CORS
 from itertools import islice
 from openai import OpenAI, OpenAIError
-from os import getenv
+from os import getenv, remove
 from pytube import YouTube
 from re import search
 import requests
 from requests.exceptions import HTTPError
+import subprocess
 import tiktoken
 import time
 from waitress import serve
 from youtube_comment_downloader import YoutubeCommentDownloader, SORT_BY_POPULAR
 from youtube_transcript_api import YouTubeTranscriptApi
+import yt_dlp
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://www.ytrehashed.com"}})
+CORS(app)
 
 proxies = {
     "http": "http://20rpwnh3:3ohshcothlGQkc7Q@proxy.proxy-cheap.com:31112",
@@ -29,7 +31,7 @@ client = OpenAI()
 downloader = YoutubeCommentDownloader()
 
 # Load Bright Data API token
-BRIGHT_DATA_API_TOKEN = getenv("BRIGHT_DATA_API_TOKEN")
+BRIGHT_DATA_API_TOKEN = getenv('BRIGHT_DATA_API_TOKEN')
 
 # Configure S3 client
 s3_client = boto3.client(
@@ -163,12 +165,19 @@ def yta_transcript(video_id):
         None
     """
 
-    # 
+    print("Fetching transcript using YouTubeTranscriptApi...")
 
     try:
-        captions = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxies)
+        if getenv('ENV', '') == 'development':
+            captions = YouTubeTranscriptApi.get_transcript(video_id)
+        else:
+            captions = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxies)
+
+        print("Captions fetched successfully!")
 
         transcript = ' '.join([caption['text'] for caption in captions])
+
+        print("Transcript concatenated successfully!")
     except:
         return None
     
@@ -383,26 +392,29 @@ def get_resolutions():
     
     try:
         video_url = f"https://www.youtube.com/watch?v={video_id}"
+        ydl_opts = {}
 
-        # Fetch all video streams with video and audio tracks combined
-        yt = YouTube(video_url)
-        streams = yt.streams.filter(
-            file_extension="mp4",
-            type="video",
-            progressive=True)
-        
-        # Create sorted list of available resolutions if streams found
-        if streams:
-            resolutions = sorted(list(set([int(stream.resolution[:-1]) for stream in streams])))
-            resolutions = [str(res) + 'p' for res in resolutions]
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(video_url, download=False)
+            formats = info_dict.get('formats', [])
+            
+            resolutions = []
+            
+            for f in formats:
+                height = f.get('height')
+                if height is not None and 144 <= height <= 1080:
+                    resolutions.append(f'{height}p')
+            
+            resolutions = sorted(set(resolutions), key=lambda x: int(x[:-1]))
+
             return jsonify({'resolutions': resolutions}), 200
-        else:
-            return jsonify({'resolutions': []}), 200
-
-    except VideoUnavailable as e:
-        return jsonify({'error': f'VideoUnavailable: {str(e)}'}), 400
-    except RegexMatchError as e:
-        return jsonify({'error': f'RegexMatchError: {str(e)}'}), 400
+    
+    except yt_dlp.utils.DownloadError as e:
+        return jsonify({'error': f'DownloadError: {str(e)}'}), 400
+    except yt_dlp.utils.ExtractorError as e:
+        return jsonify({'error': f'ExtractorError: {str(e)}'}), 400
+    except yt_dlp.utils.PostProcessingError as e:
+        return jsonify({'error': f'PostProcessingError: {str(e)}'}), 400
     except HTTPError as e:
         return jsonify({'error': str(e)}), e.response.status_code
     
@@ -439,26 +451,64 @@ def get_download():
     try:
         video_url = f"https://www.youtube.com/watch?v={video_id}"
 
-        # Fetch first available video stream with given resolution
-        yt = YouTube(video_url)
-        stream = yt.streams.filter(
-            file_extension="mp4",
-            type="video", 
-            res=video_resolution, 
-            progressive=True).first()
+         # Options for downloading video only
+        video_opts = {
+            'format': f'bestvideo[height<={video_resolution[:-1]}][vcodec^=avc1]',  # Limit resolution and choose best video with H.264 codec
+            'outtmpl': 'downloads/%(title)s_video.%(ext)s',
+        }
+        
+        # Options for downloading audio only
+        audio_opts = {
+            'format': 'bestaudio[ext=m4a]',  # Choose best audio
+            'outtmpl': 'downloads/%(title)s_audio.%(ext)s',
+        }
+        
+        # Download video
+        with yt_dlp.YoutubeDL(video_opts) as ydl:
+            info_dict = ydl.extract_info(video_url, download=False)
+            video_title = info_dict.get('title', 'video')
+            ydl.download([video_url])
+        
+        # Download audio
+        with yt_dlp.YoutubeDL(audio_opts) as ydl:
+            ydl.download([video_url])
+        
+        # Paths to the downloaded files
+        video_file = f'downloads/{video_title}_video.mp4'
+        audio_file = f'downloads/{video_title}_audio.m4a'
+        output_file = f'downloads/{video_title} [{video_resolution}].mp4'
+        
+        # Merge video and audio using ffmpeg without re-encoding
+        ffmpeg_command = [
+            'ffmpeg', '-i', video_file, '-i', audio_file, '-c:v', 'copy', '-c:a', 'copy', output_file
+        ]
+        subprocess.run(ffmpeg_command, check=True)
+        
+        # Cleanup: Delete the separate video and audio files
+        remove(video_file)
+        remove(audio_file)
 
-        # Return download URL for stream if stream found
-        if stream:
-            return jsonify({'download_url': stream.url, 'video_resolution': video_resolution}), 200
-        else:
-            return jsonify({'error': 'No streams available to download the video at this resolution!'}), 400
+        @after_this_request
+        def remove_file(response):
+            try:
+                remove(output_file)
+            except Exception as e:
+                print(f"Error removing file: {str(e)}")
+            return response
 
-    except VideoUnavailable as e:
-        return jsonify({'error': f'VideoUnavailable: {str(e)}'}), 400
-    except RegexMatchError as e:
-        return jsonify({'error': f'RegexMatchError: {str(e)}'}), 400
-    except HTTPError as e:
-        return jsonify({'error': str(e)}), e.response.status_code
+        # Stream the merged video file back to the user
+        return send_file(output_file, as_attachment=True)
+        
+    except yt_dlp.utils.DownloadError as e:
+        print(f'DownloadError: {str(e)}')
+    except yt_dlp.utils.ExtractorError as e:
+        print(f'ExtractorError: {str(e)}')
+    except yt_dlp.utils.PostProcessingError as e:
+        print(f'PostProcessingError: {str(e)}')
+    except subprocess.CalledProcessError as e:
+        print(f'FFmpeg error: {str(e)}')
+    except Exception as e:
+        print(f'Unexpected error: {str(e)}')
 
 @app.route('/api/download-video', methods=['GET'])
 def download_video():
@@ -532,7 +582,7 @@ def after_request(response):
 
 if __name__ == "__main__":
     # development
-    if getenv('FLASK_DEBUG', False):
+    if getenv('ENV', '') == 'development':
         app.run(host="0.0.0.0", port=8000, debug=True)
     # production
     else:

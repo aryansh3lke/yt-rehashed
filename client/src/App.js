@@ -111,53 +111,31 @@ function App() {
   */
   const downloadVideo = async (e) => {
     e.preventDefault();
-
+  
     if (selectedResolution === "") {
-       // throw warning if no resolution is selcted
+      // throw warning if no resolution is selected
       window.alert("Please select a resolution!");
     } else {
-      fetch(PROXY_URL + `/api/get-download?video_id=${videoId}&video_resolution=${selectedResolution}`)
-      .then(response => response.json()
-      .then(data => ({ status: response.status, body: data })))
-      .then(({ status, body }) => {
-        if (status !== 200) {
-          throw new Error(body.error);
-        }
-
-        // create request to stream the download to the user with the download URL
-        const requestUrl = PROXY_URL + '/api/download-video';
-        const params = {
-          download_url: body.download_url,
-          video_title: videoTitle,
-          video_resolution: body.video_resolution
-        };
-        const queryString = Object.keys(params).map(key => key + '=' + encodeURIComponent(params[key])).join('&');
-        const videoResolution = body.videoResolution;
+      try {
+        const response = await fetch(PROXY_URL + `/api/get-download?video_id=${videoId}&video_resolution=${selectedResolution}`);
         
-        fetch(`${requestUrl}?${queryString}`)
-          .then(downloadResponse => downloadResponse.json()
-          .then(downloadData => ({ downloadStatus: downloadResponse.status, downloadBody: downloadData })))
-          .then(({ downloadStatus, downloadBody }) => {
-              if (downloadStatus !== 200) {
-                  throw new Error(downloadBody.error);
-              }
-              const preSignedUrl = downloadBody.pre_signed_url;
-
-              // Create a temporary anchor element to trigger the download
-              const link = document.createElement('a');
-              link.href = preSignedUrl;
-              link.download = `${videoTitle} [${videoResolution}].mp4`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-          })
-          .catch(error => {
-              window.alert(error.message);
-          });
-      })
-      .catch(error => {
-        window.alert(error.message);
-      });
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+  
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${videoTitle} [${selectedResolution}].mp4`; // You can customize the filename as needed
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('There was a problem with the fetch operation:', error);
+        window.alert('Failed to download the video. Please try again.');
+      }
     }
   }
 
