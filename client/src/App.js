@@ -47,6 +47,7 @@ function App() {
       .then(data => ({ status: response.status, body: data })))
       .then(({ status, body }) => {
         if (status !== 200) {
+          if (status === 404)
           throw new Error(body.error);
         }
 
@@ -60,7 +61,11 @@ function App() {
       })
       .catch(error => {
         setSummaryLoader(false);
-        window.alert(error.message);
+        if (error.message === "Failed to fetch") {
+          window.alert("The servers are currently down. Please try again later.");
+        } else {
+          window.alert(error.message);
+        }
       });
   };
 

@@ -1,7 +1,6 @@
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, send_file, after_this_request, Response
+from flask import Flask, request, jsonify, send_file, after_this_request
 from flask_cors import CORS
-from flask_socketio import SocketIO
 from itertools import islice
 from openai import OpenAI, OpenAIError
 import os
@@ -367,7 +366,7 @@ def ffmpeg_progress_hook(line, estimated_duration):
         >>> estimated_duration = 10.0
         >>> ffmpeg_progress_hook(line, estimated_duration)
     """
-    
+
     global progress
     match = re.search(r'time=(\d+:\d+:\d+.\d+)', line)
     if match:
