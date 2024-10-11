@@ -8,7 +8,6 @@ An AI tool to quickly generate quality summaries of YouTube videos. Summarize yo
 2. [Features](#features)
 4. [Usage](#usage)
 4. [Installation](#installation)
-5. [Contact](#contact)
 
 ## Introduction
 
@@ -122,11 +121,3 @@ AWS_S3_REGION=your_region
 #### 13. View the website locally
 
 http://localhost:3000
-
-## Contact
-
-Aryan Shelke
-
-Email: aryan.shelke.2003.@gmail.com
-
-LinkedIn: [linkedin.com/in/aryanshelke](linkedin.com/in/aryanshelke)
