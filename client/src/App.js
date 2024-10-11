@@ -1,5 +1,6 @@
 import './App.css';
 import React, { useState } from 'react';
+import DownloadBar from './components/DownloadBar';
 
 // Access Vercel environment variable in production to reach deployed backend server
 const PROXY_URL = process.env.REACT_APP_PROXY_URL || 'http://localhost:8000';
@@ -11,14 +12,13 @@ function App() {
   const [comments, setComments] = useState([]);
   const [transcriptSummary, setTranscriptSummary] = useState("");
   const [commentSummary, setCommentSummary] = useState("");
-  
   const [summaryLoader, setSummaryLoader] = useState(false);
 
   const [downloadModal, setDownloadModal] = useState(false);
   const [downloadLoader, setDownloadLoader] = useState(false);
   const [downloadResolutions, setDownloadResolutions] = useState(null);
   const [selectedResolution, setSelectedResolution] = useState("");
-
+  const [isDownloading, setIsDownloading] = useState(false);
 
   /**
   * Generate summaries for a YouTube video based on the provided URL.
@@ -117,6 +117,7 @@ function App() {
       window.alert("Please select a resolution!");
     } else {
       try {
+        setIsDownloading(true);
         const response = await fetch(PROXY_URL + `/api/get-download?video_id=${videoId}&video_resolution=${selectedResolution}`);
         
         if (!response.ok) {
@@ -132,7 +133,9 @@ function App() {
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
+        setIsDownloading(false);
       } catch (error) {
+        setIsDownloading(false);
         console.error('There was a problem with the fetch operation:', error);
         window.alert('Failed to download the video. Please try again.');
       }
@@ -240,7 +243,7 @@ function App() {
                         <ul className="resolution-buttons">
                           {downloadResolutions.map((resolution, index) => (
                             <li key={index}>
-                              <input 
+                              <input
                                 type="radio"
                                 id={resolution}
                                 value={resolution}
@@ -251,6 +254,11 @@ function App() {
                             </li>
                           ))}
                         </ul>
+
+                        {isDownloading && (
+                          <DownloadBar endpoint={PROXY_URL + '/api/get-progress'} />
+                        )}
+
                         <button className="submit-button" onClick={downloadVideo}>
                           <p className="download-text">Download Video</p>
                           <img className="download-icon-large inverted-icon" src="download.svg" alt="Download"></img>

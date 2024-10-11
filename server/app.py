@@ -1,45 +1,39 @@
-import boto3
-from botocore.exceptions import NoCredentialsError, ClientError
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, send_file, after_this_request
+from flask import Flask, request, jsonify, send_file, after_this_request, Response
 from flask_cors import CORS
+from flask_socketio import SocketIO
 from itertools import islice
 from openai import OpenAI, OpenAIError
-from os import getenv, remove
-from re import search
-import requests
+import os
+import re
 from requests.exceptions import HTTPError
 import subprocess
 import tiktoken
-import time
 from waitress import serve
 from youtube_comment_downloader import YoutubeCommentDownloader, SORT_BY_POPULAR
 from youtube_transcript_api import YouTubeTranscriptApi
 import yt_dlp
 
+load_dotenv()
+
 app = Flask(__name__)
 CORS(app)
+client = OpenAI()
+downloader = YoutubeCommentDownloader()
 
+# Rotating residential proxies to avoid IP bans for web-scraping
 proxies = {
     "http": "http://20rpwnh3:3ohshcothlGQkc7Q@proxy.proxy-cheap.com:31112",
     "https": "http://20rpwnh3:3ohshcothlGQkc7Q@proxy.proxy-cheap.com:31112"
 }
 
-load_dotenv()
-client = OpenAI()
-downloader = YoutubeCommentDownloader()
-
-# Load Bright Data API token
-BRIGHT_DATA_API_TOKEN = getenv('BRIGHT_DATA_API_TOKEN')
-
-# Configure S3 client
-s3_client = boto3.client(
-    's3',
-    aws_access_key_id = getenv('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key = getenv('AWS_SECRET_ACCESS_KEY'),
-    region_name = getenv('AWS_S3_REGION')
-)
-bucket_name = getenv('AWS_S3_BUCKET_NAME')
+# Global variables for tracking download progress
+combined_progress = 0
+progress = {
+    'video': 0,
+    'audio': 0,
+    'ffmpeg': 0
+}
 
 # ChatGPT-3.5-turbo Model
 CHATGPT_TOKEN_LIMIT = 16385
@@ -75,75 +69,10 @@ def extract_video_id(url):
     """
     
     regex = r'(?:https?://)?(?:www\.)?(?:youtube\.com/(?:[^/\n\s]+/\S*/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be/)([a-zA-Z0-9_-]{11})'
-    match = search(regex, url)
+    match = re.search(regex, url)
     return match.group(1) if match else None
 
-def brightdata_transcript(video_url):
-    """
-    Fetch the transcript for a given YouTube video URL with the BrightData API.
-
-    This function sends a POST request to the BrightData API to initiate the retrieval of a transcript 
-    for the specified YouTube video. It handles the API response, extracts the snapshot ID from a successful 
-    request, and attempts to fetch the transcript data with retry logic in case of failure.
-
-    Args:
-        video_url (str): The URL of the YouTube video for which to fetch the transcript.
-
-    Returns:
-        str: The transcript text if successfully retrieved, otherwise None.
-
-    Examples:
-        >>> fetch_transcript("https://www.youtube.com/watch?v=abc123XYZ")
-        'This is the transcript text of the video.'
-        >>> fetch_transcript("https://youtu.be/abc123XYZ")
-        'This is the transcript text of the video.'
-        >>> fetch_transcript("https://invalid.url")
-        None
-    """
-
-    # Set the headers
-    transcript_api_headers = {
-        "Authorization": f"Bearer {BRIGHT_DATA_API_TOKEN}",
-        "Content-Type": "application/json"
-    }
-
-    # Set the data (YouTube video URLs)
-    data = [{"url": video_url}]
-
-    # API endpoint
-    transcript_api_url = "https://api.brightdata.com/datasets/v3/trigger?dataset_id=gd_lk56epmy2i5g7lzu0k"
-
-    # Send the POST request
-    response = requests.post(transcript_api_url, headers=transcript_api_headers, json=data)
-
-    # Print the response
-    if response.status_code != 200:
-        print(f"Request failed with status code {response.status_code}")
-        print(response.text)
-        return None
-    else:
-        print("First request was successful!")
-        print(response.json(), '\n\n\n')
-
-    # Extract the snapshot ID from the successful request
-    snapshot_id =response.json()['snapshot_id']
-
-    # Endpoint to get results for the snapshot ID
-    snapshot_url = f" https://api.brightdata.com/datasets/v3/snapshot/{snapshot_id}?format=json"
-
-    for attempt in range(3):  # Try a maximum of 4 times
-        response = requests.get(snapshot_url, headers=transcript_api_headers)
-
-        if response.status_code == 200:
-            return response.json()[0]['transcript']  # Return the successful response
-        else:
-            print(f"Attempt {attempt + 1} failed: {response.json()}")
-            time.sleep(3)  # Wait for 5 seconds before retrying
-
-    print("Max attempts reached. Failed to fetch snapshot.")
-    return None
-
-def yta_transcript(video_id):
+def fetch_transcript(video_id):
     """
     Fetch captions for a given YouTube video ID.
 
@@ -158,25 +87,19 @@ def yta_transcript(video_id):
         None: If an error occurs or captions are not available.
 
     Examples:
-        >>> fetch_captions("abc123XYZ")
+        >>> fetch_transcript("abc123XYZ")
         [{'start': 0.0, 'duration': 4.0, 'text': 'Hello world'}, ...]
-        >>> fetch_captions("invalid_id")
+        >>> fetch_transcript("invalid_id")
         None
     """
 
-    print("Fetching transcript using YouTubeTranscriptApi...")
-
     try:
-        if getenv('ENV', '') == 'development':
+        if os.getenv('ENV', '') == 'development':
             captions = YouTubeTranscriptApi.get_transcript(video_id)
         else:
             captions = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxies)
 
-        print("Captions fetched successfully!")
-
         transcript = ' '.join([caption['text'] for caption in captions])
-
-        print("Transcript concatenated successfully!")
     except:
         return None
     
@@ -307,6 +230,154 @@ def get_youtube_video_title(video_url):
         video_title = info_dict.get('title', None)
         return video_title
 
+def sanitize_title(title):
+    """
+    Sanitize the video title by removing invalid characters.
+
+    This function removes characters that are not allowed in file names from the provided video title.
+
+    Args:
+        title (str): The original video title.
+
+    Returns:
+        str: The sanitized video title with invalid characters removed.
+
+    Examples:
+        >>> sanitize_title("My Video: How to *Make* Money?")
+        'My Video How to Make Money'
+        >>> sanitize_title("Invalid/Characters|In*Title")
+        'InvalidCharactersInTitle'
+    """
+    return re.sub(r'[\/:*?"<>|]', '', title)
+
+def update_combined_progress():
+    """
+    Update the combined progress of the download.
+
+    This function calculates the combined progress based on the individual
+    progress of video, audio, and ffmpeg tasks. The combined progress is
+    updated as a global variable.
+
+    Returns:
+        None
+
+    Examples:
+        >>> update_combined_progress()
+    """
+
+    global combined_progress
+    video_progress = min(40.0, progress['video'] * 0.4)
+    audio_progress = min(40.0, progress['audio'] * 0.4)
+    ffmpeg_progress = min(20.0, progress['ffmpeg'] * 0.2)
+    combined_progress =  video_progress + audio_progress + ffmpeg_progress
+
+def clean_hook_str(ansi_str):
+    """
+    Clean the ANSI escape codes from the progress string.
+
+    This function removes any ANSI escape codes from the progress string
+    and extracts the numeric part of the string.
+
+    Args:
+        ansi_str (str): The progress string containing ANSI escape codes.
+
+    Returns:
+        str: The cleaned progress string containing only numeric characters and a decimal point.
+
+    Examples:
+        >>> ansi_str = ' 45.4%'
+        >>> clean_str = clean_hook_str(ansi_str)
+        >>> print(clean_str)  # Output: '45.4'
+    """
+    
+    clean_str = ""
+    for char in ansi_str:
+        if char.isnumeric() or char == '.':
+            clean_str += char
+    return clean_str[3:]
+
+def video_progress_hook(d):
+    """
+    Update the video download progress.
+
+    This function is called during the video download process to update
+    the progress of the video download. It cleans the progress string,
+    converts it to a float, and updates the global progress dictionary.
+
+    Args:
+        d (dict): A dictionary containing the download status and progress.
+
+    Returns:
+        None
+    """
+
+    global progress
+    if d['status'] == 'downloading':
+        try:
+            progress['video'] = float(clean_hook_str(d['_percent_str']))
+            print(f'\n:{progress["video"]}:')
+            update_combined_progress()
+        except ValueError as e:
+            print(f"Error converting video progress to float: {e}")
+            progress['video'] = 0
+
+def audio_progress_hook(d):
+    """
+    Update the audio download progress.
+
+    This function is called during the audio download process to update
+    the progress of the audio download. It cleans the progress string,
+    converts it to a float, and updates the global progress dictionary.
+
+    Args:
+        d (dict): A dictionary containing the download status and progress.
+
+    Returns:
+        None
+    """
+
+    global progress
+    if d['status'] == 'downloading':
+        try:
+            progress['audio'] = float(clean_hook_str(d['_percent_str']))
+            print(f'\n:{progress["audio"]}:')
+            update_combined_progress()
+        except ValueError as e:
+            print(f"Error converting audio progress to float: {e}")
+            progress['audio'] = 0
+
+def ffmpeg_progress_hook(line, estimated_duration):
+    """
+    Update the ffmpeg processing progress.
+
+    This function is called during the ffmpeg processing to update the
+    progress of the ffmpeg task. It extracts the time from the ffmpeg
+    output line, calculates the progress, and updates the global progress
+    dictionary.
+
+    Args:
+        line (str): A line of output from the ffmpeg process.
+        estimated_duration (float): The estimated duration of the ffmpeg process in seconds.
+
+    Returns:
+        None
+
+    Examples:
+        >>> line = 'frame=  100 fps=0.0 q=-1.0 Lsize=    1024kB time=00:00:05.00 bitrate=1677.8kbits/s speed=  10x'
+        >>> estimated_duration = 10.0
+        >>> ffmpeg_progress_hook(line, estimated_duration)
+    """
+    
+    global progress
+    match = re.search(r'time=(\d+:\d+:\d+.\d+)', line)
+    if match:
+        time_str = match.group(1)
+        h, m, s = map(float, time_str.split(':'))
+        total_seconds = h * 3600 + m * 60 + s
+        progress['ffmpeg'] = (total_seconds / estimated_duration) * 100
+        print(progress['ffmpeg'])
+        update_combined_progress()
+
 @app.route('/')
 def hello():
     return "You have reached the Youtube Rehashed Flask backend server!"
@@ -342,8 +413,8 @@ def get_summaries():
     if video_id is None:
         return jsonify({'error': 'Please enter a valid YouTube URL!'}), 400
 
-    # Fetch YouTube transcript using Bright Data API endpoint
-    transcript = yta_transcript(video_id)
+    # Fetch YouTube transcript using YouTubeTranscriptAPI
+    transcript = fetch_transcript(video_id)
     if transcript is None:
         return jsonify({'error': 'YouTube video does not exist or is missing a transcript!'}), 400
         
@@ -466,6 +537,11 @@ def get_download():
     Example:
         GET /api/get-download?video_id=dQw4w9WgXcQ&video_resolution=360p
     """
+    # Reset progress at the start of the download
+    global combined_progress
+    global progress
+    combined_progress = 0
+    progress = {'video': 0, 'audio': 0, 'ffmpeg': 0}    
 
     # Save parameters from request
     video_id = request.args.get('video_id')
@@ -479,23 +555,28 @@ def get_download():
     
     try:
         video_url = f"https://www.youtube.com/watch?v={video_id}"
+        sanitized_title = get_youtube_video_title(video_url)
 
-         # Options for downloading video only
+        # Options for downloading video only
         video_opts = {
             'format': f'bestvideo[height<={video_resolution[:-1]}][vcodec^=avc1]',  # Limit resolution and choose best video with H.264 codec
-            'outtmpl': 'downloads/%(title)s_video.%(ext)s',
+            'outtmpl': f'downloads/{sanitized_title}_video.mp4',
+            'progress_hooks': [video_progress_hook],
         }
         
         # Options for downloading audio only
         audio_opts = {
             'format': 'bestaudio[ext=m4a]',  # Choose best audio
-            'outtmpl': 'downloads/%(title)s_audio.%(ext)s',
+            'outtmpl': f'downloads/{sanitized_title}_audio.m4a',
+            'progress_hooks': [audio_progress_hook],
         }
+
+        print("Starting download process...")
         
         # Download video
         with yt_dlp.YoutubeDL(video_opts) as ydl:
             info_dict = ydl.extract_info(video_url, download=False)
-            video_title = info_dict.get('title', 'video')
+            estimated_duration = info_dict.get('duration', 0)
             ydl.download([video_url])
         
         # Download audio
@@ -503,24 +584,31 @@ def get_download():
             ydl.download([video_url])
         
         # Paths to the downloaded files
-        video_file = f'downloads/{video_title}_video.mp4'
-        audio_file = f'downloads/{video_title}_audio.m4a'
-        output_file = f'downloads/{video_title} [{video_resolution}].mp4'
+        video_file = f'downloads/{sanitized_title}_video.mp4'
+        audio_file = f'downloads/{sanitized_title}_audio.m4a'
+        output_file = f'downloads/{sanitized_title} [{video_resolution}].mp4'
         
         # Merge video and audio using ffmpeg without re-encoding
         ffmpeg_command = [
             'ffmpeg', '-i', video_file, '-i', audio_file, '-c:v', 'copy', '-c:a', 'copy', output_file
         ]
-        subprocess.run(ffmpeg_command, check=True)
+        process = subprocess.Popen(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        for line in process.stdout:
+            ffmpeg_progress_hook(line, estimated_duration)
+        process.wait()
+
+        # Reset progress at the end of the download
+        combined_progress = 0
+        progress = {'video': 0, 'audio': 0, 'ffmpeg': 0}
         
         # Cleanup: Delete the separate video and audio files
-        remove(video_file)
-        remove(audio_file)
+        os.remove(video_file)
+        os.remove(audio_file)
 
         @after_this_request
         def remove_file(response):
             try:
-                remove(output_file)
+                os.remove(output_file)
             except Exception as e:
                 print(f"Error removing file: {str(e)}")
             return response
@@ -539,69 +627,22 @@ def get_download():
     except Exception as e:
         print(f'Unexpected error: {str(e)}')
 
-@app.route('/api/download-video', methods=['GET'])
-def download_video():
+@app.route('/api/get-progress', methods=['GET'])
+def get_progress():
     """
-    Download a video file from a given download URL, upload it to Amazon S3, and
-    return a pre-signed URL for the client.
+    Return the current combined progress of the download.
 
     HTTP Method: GET
 
-    Request Parameters:
-        download_url (str): The download URL of the video to stream to the client. (required)
-        video_title (str): The title of the video to use for the download's file name. (required)
-        video_resolution (str): The resolution of the video to use for the download's file name. (required)
-
     Responses:
-        200: A JSON object containing the pre-signed URL for the uploaded video.
-        400: Missing parameters or invalid download URL.
-        500: An error occurred during the download or upload process.
+        200: The current value of combined_progress.
+        500: An error occurred while fetching the progress.
 
     Example:
-        GET /api/download-video?download_url=https://example.com/video.mp4&video_title=SampleVideo&video_resolution=720p
+        GET /api/get-progress
     """
-
-    # Save parameters from request
-    download_url = request.args.get('download_url')
-    video_title = request.args.get('video_title')
-    video_resolution = request.args.get('video_resolution')
-
-    # Check for missing parameters
-    if not download_url:
-        return jsonify({'error': 'Download URL is missing!'}), 400
-    if not video_title:
-        return jsonify({'error': 'Video title is missing!'}), 400
-    if not video_resolution:
-        return jsonify({'error': 'Video resolution is missing!'}), 400
-
-    try:
-        # Fetch video from the provided URL
-        response = requests.get(download_url, stream=True)
-
-        # Raise HTTPError if HTTP request returned unsuccessful status code
-        response.raise_for_status()
-
-        # Upload the video to S3
-        s3_key = f"{video_title} [{video_resolution}].mp4"
-        s3_client.upload_fileobj(response.raw, bucket_name, s3_key)
-
-        # Generate a pre-signed URL for the uploaded video
-        pre_signed_url = s3_client.generate_presigned_url(
-            'get_object',
-            Params={'Bucket': bucket_name, 'Key': s3_key},
-            ExpiresIn=3600  # URL expiration time in seconds
-        )
-
-        return jsonify({'pre_signed_url': pre_signed_url}), 200
-
-    except HTTPError as e:
-        return jsonify({'error': str(e)}), e.response.status_code
-    except NoCredentialsError:
-        return jsonify({'error': 'Credentials not available'}), 500
-    except ClientError as e:
-        return jsonify({'error': str(e)}), 500
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    global combined_progress
+    return jsonify({'progress': combined_progress}), 200
 
 # Flask CORS configurations
 @app.after_request
@@ -611,8 +652,8 @@ def after_request(response):
 
 if __name__ == "__main__":
     # development
-    if getenv('ENV', '') == 'development':
-        app.run(host="0.0.0.0", port=8000, debug=True)
+    if os.getenv('ENV', '') == 'development':
+        app.run(host='0.0.0.0', port=8000, debug=True)
     # production
     else:
         serve(app, host="0.0.0.0", port=8000)
