@@ -297,7 +297,7 @@ def clean_hook_str(ansi_str):
     if os.getenv('ENV', '') == 'development':
         return clean_str[3:]
 
-    return clean_str[1:]
+    return clean_str
 
 def video_progress_hook(d):
     """
