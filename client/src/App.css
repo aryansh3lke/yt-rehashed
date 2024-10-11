@@ -327,6 +327,7 @@ progress[value]::-moz-progress-bar {
     transform: translate(-50%, -50%);
     color: black;
     margin: 0;
+    font-size: 15px;
 }
 .download-text {
     margin: 0;
