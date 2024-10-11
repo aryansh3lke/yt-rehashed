@@ -647,12 +647,6 @@ def get_progress():
     global combined_progress
     return jsonify({'progress': combined_progress}), 200
 
-# Flask CORS configurations
-@app.after_request
-def after_request(response):
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
 if __name__ == "__main__":
     # development
     if os.getenv('ENV', '') == 'development':
