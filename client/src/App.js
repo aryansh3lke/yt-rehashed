@@ -47,7 +47,6 @@ function App() {
       .then(data => ({ status: response.status, body: data })))
       .then(({ status, body }) => {
         if (status !== 200) {
-          if (status === 404)
           throw new Error(body.error);
         }
 
@@ -60,12 +59,11 @@ function App() {
         setCommentSummary(body.comments_summary);
       })
       .catch(error => {
-        setSummaryLoader(false);
         if (error.message === "Failed to fetch") {
-          window.alert("The servers are currently down. Please try again later.");
-        } else {
-          window.alert(error.message);
+          error.message = "The servers are currently down. Please try again later.";
         }
+        setSummaryLoader(false);
+        window.alert(error.message);
       });
   };
 
