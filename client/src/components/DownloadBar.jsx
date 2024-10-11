@@ -16,9 +16,7 @@ export default function DownloadBar({ endpoint }) {
         fetch(endpoint)
             .then(res => res.json())
             .then(data => {
-                const progress = data.progress;
-                console.log('Progress:', progress);
-                setDownloadProgress(progress);
+                setDownloadProgress(data.progress);
             })
             .catch(error => {
                 console.error('Error fetching status:', error);

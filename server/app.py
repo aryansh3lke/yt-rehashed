@@ -259,9 +259,6 @@ def update_combined_progress():
 
     Returns:
         None
-
-    Examples:
-        >>> update_combined_progress()
     """
 
     global combined_progress
@@ -284,9 +281,8 @@ def clean_hook_str(ansi_str):
         str: The cleaned progress string containing only numeric characters and a decimal point.
 
     Examples:
-        >>> ansi_str = ' 45.4%'
-        >>> clean_str = clean_hook_str(ansi_str)
-        >>> print(clean_str)  # Output: '45.4'
+        >>> clean_str = clean_hook_str(' 45.4%')
+        '45.4'
     """
     
     clean_str = ""
@@ -318,7 +314,6 @@ def video_progress_hook(d):
     if d['status'] == 'downloading':
         try:
             progress['video'] = float(clean_hook_str(d['_percent_str']))
-            print(f'\n:{progress["video"]}:')
             update_combined_progress()
         except ValueError as e:
             print(f"Error converting video progress to float: {e}")
@@ -343,7 +338,6 @@ def audio_progress_hook(d):
     if d['status'] == 'downloading':
         try:
             progress['audio'] = float(clean_hook_str(d['_percent_str']))
-            print(f'\n:{progress["audio"]}:')
             update_combined_progress()
         except ValueError as e:
             print(f"Error converting audio progress to float: {e}")
@@ -378,7 +372,6 @@ def ffmpeg_progress_hook(line, estimated_duration):
         h, m, s = map(float, time_str.split(':'))
         total_seconds = h * 3600 + m * 60 + s
         progress['ffmpeg'] = (total_seconds / estimated_duration) * 100
-        print(progress['ffmpeg'])
         update_combined_progress()
 
 @app.route('/')
@@ -573,8 +566,6 @@ def get_download():
             'outtmpl': f'downloads/{sanitized_title}_audio.m4a',
             'progress_hooks': [audio_progress_hook],
         }
-
-        print("Starting download process...")
         
         # Download video
         with yt_dlp.YoutubeDL(video_opts) as ydl:
@@ -620,15 +611,15 @@ def get_download():
         return send_file(output_file, as_attachment=True)
         
     except yt_dlp.utils.DownloadError as e:
-        print(f'DownloadError: {str(e)}')
+        return jsonify({'error': f'DownloadError: {str(e)}'})
     except yt_dlp.utils.ExtractorError as e:
-        print(f'ExtractorError: {str(e)}')
+        return jsonify({'error':f'ExtractorError: {str(e)}'})
     except yt_dlp.utils.PostProcessingError as e:
-        print(f'PostProcessingError: {str(e)}')
+        return jsonify({'error':f'PostProcessingError: {str(e)}'})
     except subprocess.CalledProcessError as e:
-        print(f'FFmpeg error: {str(e)}')
+        return jsonify({'error': f'FFmpeg error: {str(e)}'})
     except Exception as e:
-        print(f'Unexpected error: {str(e)}')
+        return jsonify({'error': f'Unexpected error: {str(e)}'})
 
 @app.route('/api/get-progress', methods=['GET'])
 def get_progress():
