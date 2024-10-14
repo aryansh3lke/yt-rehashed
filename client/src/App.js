@@ -1,8 +1,14 @@
 import './App.css';
 import React, { useState } from 'react';
-import DownloadBar from './components/DownloadBar';
+import Logo from './components/Logo';
+import LinkForm from './components/LinkForm';
+import Loader from './components/Loader';
+import VideoPlayer from './components/VideoPlayer';
+import CommentSection from './components/CommentSection';
+import SummaryBox from './components/SummaryBox';
+import DownloadModal from './components/DownloadModal';
 
-// Access Vercel environment variable in production to reach deployed backend server
+// Access Vercel environment variable in production to reach deployed backend server on Railway
 const PROXY_URL = process.env.REACT_APP_PROXY_URL || 'http://localhost:8000';
 
 function App() {
@@ -10,7 +16,7 @@ function App() {
   const [videoId, setVideoId] = useState("");
   const [videoTitle, setVideoTitle] = useState("");
   const [comments, setComments] = useState([]);
-  const [transcriptSummary, setTranscriptSummary] = useState("");
+  const [videoSummary, setVideoSummary] = useState("");
   const [commentSummary, setCommentSummary] = useState("");
   const [summaryLoader, setSummaryLoader] = useState(false);
 
@@ -36,7 +42,7 @@ function App() {
     setVideoId("");
     setVideoTitle("");
     setComments("")
-    setTranscriptSummary("");
+    setVideoSummary("");
     setCommentSummary("");
     setDownloadResolutions("");
     setSelectedResolution("");
@@ -55,7 +61,7 @@ function App() {
         setVideoId(body.video_id);
         setVideoTitle(body.video_title);
         setComments(body.comments);
-        setTranscriptSummary(body.transcript_summary);
+        setVideoSummary(body.video_summary);
         setCommentSummary(body.comments_summary);
       })
       .catch(error => {
@@ -148,137 +154,49 @@ function App() {
   return (
     <div className="app">
       <div className="app-main">
-        <div className="logo-title">
-          <img className="app-logo" src={process.env.PUBLIC_URL + '/logo512.png'} alt="YT Rehashed Logo"></img>
-          <h1>YT Rehashed</h1>
-        </div>
-        <h3>Enter the link to summarize your YouTube video:</h3>
-        <div className="link-form">
-          <input
-            className="input-box"
-            type="text"
-            value={inputLink}
-            placeholder="https://www.youtube.com/watch?v="
-            onChange={(e) => setLink(e.target.value)}>
-          </input>
-          <button className="submit-button" onClick={generateSummaries}>Summarize</button>
-        </div>
+        <Logo
+          logoTitle={"YT Rehashed"}
+          logoSrc={process.env.PUBLIC_URL + '/logo512.png'}
+        />
 
-        {summaryLoader && (
-          <div className="loader"></div>
-        )}
+        <LinkForm
+          prompt={"Enter the link to summarize your YouTube video:"}
+          placeholder={"https://www.youtube.com/watch?v="}
+          inputLink={inputLink}
+          setLink={setLink}
+          onSubmit={generateSummaries}
+        />
 
-        {transcriptSummary && (
+        <Loader
+          loaderTrigger={summaryLoader}
+          loaderType={"summary-loader"}
+        />
+
+        {videoSummary && (
           <div className="result">
-            <section className="main-box-outer">
-              <h2 className="section-title" id="download-title">Original Video
-                <button className="download-button" onClick={displayResolutions}>
-                  <img className="download-icon" src="download.svg" alt="Download"></img>
-                </button>
-              </h2>
-              <div className="main-box-inner video-box">
-                <iframe
-                  className="video-player"
-                  title="YouTube Video Player" 
-                  src={"https://www.youtube.com/embed/" + videoId}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen">
-                </iframe>
-              </div>
-            </section>
-
-            <section className="main-box-outer">
-              <h2 className="section-title">Video Summary</h2>
-              <div className="main-box-inner text-box">
-                <p className="summary">{transcriptSummary}</p>
-              </div>
-            </section>
+            <VideoPlayer videoId={videoId} displayResolutions={displayResolutions}/>
+            <SummaryBox summaryTitle={"Video Summary"} summaryText={videoSummary}/>
           </div>
         )}
 
         {commentSummary && (
           <div className="result">
-            <section className="main-box-outer">
-              <h2 className="section-title">Popular Comments</h2>
-              <div className="main-box-inner comment-box">
-                <ul className="comment-list">
-                  {comments.map((comment) => (
-                    <li key={comment.cid} className="comment-item">
-                      <img className="comment-profile" src={comment.photo} alt={comment.author}></img>
-                      <div className="comment-main">
-                        <p className="comment-header">
-                          <strong>{comment.author}</strong>
-                          <small>{comment.time}</small></p>
-                        <p className="comment-text">{comment.text.trim()}</p>
-                        <div className="comment-likes">
-                          <img src={process.env.PUBLIC_URL + '/thumbs-up.svg'} alt={"Like Button"}></img>
-                          <small className="comment-like-count">{comment.votes}</small>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </section>
-
-            <section className="main-box-outer">
-              <h2 className="section-title">Comments Summary</h2>
-              <div className="main-box-inner text-box">
-                <p className="summary">{commentSummary}</p>
-              </div>
-            </section>
+            <CommentSection comments={comments}/>
+            <SummaryBox summaryTitle={"Comments Summary"} summaryText={commentSummary}/>
           </div>
         )}
 
-        {downloadModal && (
-          <div>
-            <div className="modal active" id="modal">
-              <button className="close-button" onClick={ () => {setDownloadModal(false)} }>&times;</button>
-              <div>
-              {downloadLoader ? (
-                  <div id="download-loader" className="loader"></div>
-                ): (
-                  <div>
-                    {downloadResolutions && downloadResolutions.length > 0 ? (
-                      <div id="download-result">
-                        <div className="modal-header">
-                          <h4 className="modal-title">Select a resolution to download:</h4>
-                        </div>
-                        <ul className="resolution-buttons">
-                          {downloadResolutions.map((resolution, index) => (
-                            <li key={index}>
-                              <input
-                                type="radio"
-                                id={resolution}
-                                value={resolution}
-                                checked={resolution === selectedResolution}
-                                onChange={ (e) => {setSelectedResolution(e.target.value)} }
-                                name="options"/>
-                                <label htmlFor={resolution}>{resolution}</label>
-                            </li>
-                          ))}
-                        </ul>
-
-                        {isDownloading && (
-                          <DownloadBar endpoint={PROXY_URL + '/api/get-progress'} />
-                        )}
-
-                        <button className="submit-button" onClick={downloadVideo}>
-                          <p className="download-text">Download Video</p>
-                          <img className="download-icon-large inverted-icon" src="download.svg" alt="Download"></img>
-                        </button>
-                      </div>
-                    ) : (
-                      <h3>No downloads available.</h3>
-                    )
-                    }
-                  </div>
-                )}
-            </div>
-          </div>
-          <div id="overlay"></div>
-        </div>
-        )}
-
+        <DownloadModal
+          downloadModal={downloadModal}
+          setDownloadModal={setDownloadModal}
+          downloadLoader={downloadLoader}
+          downloadResolutions={downloadResolutions}
+          selectedResolution={selectedResolution}
+          setSelectedResolution={setSelectedResolution}
+          progressEndpoint={PROXY_URL + '/api/get-progress'}
+          isDownloading={isDownloading}
+          downloadVideo={downloadVideo}
+        />
       </div>
     </div>
   );

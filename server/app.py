@@ -419,7 +419,7 @@ def get_summaries():
     if comments is None:
         return jsonify({'error': 'Comments could not be retrieved for this video!'}), 500
 
-    # Write ChatGPT prompt for generating transcript summary
+    # Write ChatGPT prompt for generating video summary
     transcript_prompt = f"""
         Summarize the following YouTube transcript in 200-250 words: {transcript}
         Do not include any details about the comments.
@@ -429,14 +429,14 @@ def get_summaries():
     if (get_token_count(transcript_prompt, "gpt-3.5-turbo") < REQUEST_TOKEN_LIMIT):
         
         # Generate transcript summary
-        transcript_summary, transcript_error = ask_chatgpt(transcript_prompt, CHATGPT_SYSTEM_ROLE)
+        video_summary, transcript_error = ask_chatgpt(transcript_prompt, CHATGPT_SYSTEM_ROLE)
 
         if transcript_error is not None:
                 return jsonify({'error': transcript_error}), 500
 
         # Write ChatGPT prompt for generating comment summary
         comments_prompt = f"""
-            Here is a summary of a YouTube transcript: {transcript_summary}
+            Here is a summary of a YouTube transcript: {video_summary}
             Summarize the following comments section for this video: {comments_str}
             Do not include any details about the transcript, only the comments.
             Do not give a list, but a paragraph.
@@ -454,7 +454,7 @@ def get_summaries():
                 return jsonify({'video_id': video_id,
                                 'video_title': get_youtube_video_title(video_url),
                                 'comments': comments,
-                                'transcript_summary': transcript_summary, 
+                                'video_summary': video_summary, 
                                 'comments_summary': comments_summary}), 200
         else:
             return jsonify({'error': 'This video is too long to summarize!'}), 400

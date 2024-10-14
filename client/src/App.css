@@ -44,12 +44,11 @@ h3 {
     pointer-events: none;
 }
 
-
 /* YouTube Link Submission Form */
 .link-form {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     gap: 5px;
 }
@@ -82,7 +81,6 @@ h3 {
 
 /* Animated Buffering Circle (Loader) */
 .loader {
-    margin: auto;
     border: 20px solid #EAF0F6;
     border-radius: 50%;
     border-top: 20px solid red;
@@ -99,9 +97,17 @@ h3 {
         transform: rotate(360deg);
     }
 }
-#download-loader {
-    width: 100px;
-    height: 100px;
+.loader-div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.summary-loader {
+    margin-top: 50px;
+}
+.download-loader {
+    width: 150px;
+    height: 150px;
 }
 
 /* Result Section Boxes */
@@ -295,32 +301,20 @@ progress[value] {
     border-radius: 10em;
     background: var(--background);
 }
-progress[value]::-webkit-progress-bar {
-    border-radius: 10em;
-    background: var(--background);
-}
-progress[value]::-webkit-progress-value {
-    border-radius: 10em;
-    background: var(--color);
-}
-progress[value]::-moz-progress-bar {
-    border-radius: 10em;
-    background: var(--color);
-}
-.download-progress-bar {
+.progress-bar {
     position: relative;
     width: 200px;
     background-color: #f3f3f3;
     border-radius: 5px;
     overflow: hidden;
 }
-.download-progress {
+.progress-fill {
     height: 30px;
     line-height: 20px;
     border-radius: 5px;
     background: aqua;
 }
-.download-progress-text {
+.progress-text {
     position: absolute;
     top: 50%;
     left: 50%;
