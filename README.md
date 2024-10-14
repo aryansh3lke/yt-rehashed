@@ -76,48 +76,10 @@ https://platform.openai.com/api-keys
 
 > NOTE: Make sure to place the `.env` file in the `/server/` directory.
 
-#### 9. Create an AWS S3 Bucket
-
-https://aws.amazon.com/s3/
-
-#### 10. Collect values for the following environment variables and add them
-
-```
-AWS_ACCESS_KEY_ID=your_access_key_id
-AWS_SECRET_ACCESS_KEY=your_secret_access_key
-AWS_S3_BUCKET_NAME=your_bucket_name
-AWS_S3_REGION=your_region
-```
-
-#### 11. Add the following bucket policy for your AWS S3 bucket
-
-```
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "arn:aws:iam::your-account-id:user/your-iam-user"
-      },
-      "Action": [
-        "s3:PutObject",
-        "s3:GetObject",
-        "s3:ListBucket"
-      ],
-      "Resource": [
-        "arn:aws:s3:::your-s3-bucket-name",
-        "arn:aws:s3:::your-s3-bucket-name/*"
-      ]
-    }
-  ]
-}
-```
-
-#### 12. Start the Flask backend server
+#### 9. Start the Flask backend server
 
 `python app.py`
 
-#### 13. View the website locally
+#### 10. View the website locally
 
 http://localhost:3000
