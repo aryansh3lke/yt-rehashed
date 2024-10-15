@@ -1,20 +1,15 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import '../App.css'
 
-export default function ProgressBar({ endpoint, barTrigger }) {
-    const [progress, setProgress] = useState(0);
+export default function ProgressBar({ progress, setProgress, endpoint, barTrigger }) {
+    
 
     useEffect(() => {
         const getProgress = async () => {
             fetch(endpoint)
                 .then(res => res.json())
                 .then(data => {
-                    const progress = data.progress;
                     setProgress(data.progress);
-                    
-                    if (progress === 100.0) {
-                        clearInterval(interval);
-                    }
                 })
                 .catch(error => {
                     console.error('Error fetching status:', error);
@@ -30,7 +25,7 @@ export default function ProgressBar({ endpoint, barTrigger }) {
 
   return (
     <div>
-        {barTrigger && (
+        {barTrigger && progress < 100.0 && (
         <div>
             <div className="progress-bar">
                 <div className="progress-fill" style={{ width: `${progress}%` }}>

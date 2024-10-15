@@ -8,7 +8,8 @@ import DownloadVideoButton from './DownloadVideoButton';
 
 export default function DownloadModal({ downloadModal, setDownloadModal, 
     downloadLoader, downloadResolutions, selectedResolution, 
-    setSelectedResolution, progressEndpoint, isDownloading, downloadVideo }) {
+    setSelectedResolution, progressEndpoint, isDownloading, downloadVideo, 
+    progress, setProgress }) {
 
   return (
     <div>
@@ -36,6 +37,8 @@ export default function DownloadModal({ downloadModal, setDownloadModal,
                         />
 
                         <ProgressBar
+                          progress={progress}
+                          setProgress={setProgress}
                           endpoint={progressEndpoint}
                           barTrigger={isDownloading}
                         />

@@ -590,10 +590,6 @@ def get_download():
         for line in process.stdout:
             ffmpeg_progress_hook(line, estimated_duration)
         process.wait()
-
-        # Reset progress at the end of the download
-        combined_progress = 0
-        progress = {'video': 0, 'audio': 0, 'ffmpeg': 0}
         
         # Cleanup: Delete the separate video and audio files
         os.remove(video_file)

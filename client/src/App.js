@@ -25,6 +25,7 @@ function App() {
   const [downloadResolutions, setDownloadResolutions] = useState(null);
   const [selectedResolution, setSelectedResolution] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   /**
   * Generate summaries for a YouTube video based on the provided URL.
@@ -196,6 +197,8 @@ function App() {
           progressEndpoint={PROXY_URL + '/api/get-progress'}
           isDownloading={isDownloading}
           downloadVideo={downloadVideo}
+          progress={progress}
+          setProgress={setProgress}
         />
       </div>
     </div>
