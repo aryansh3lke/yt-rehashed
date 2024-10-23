@@ -1,8 +1,8 @@
-import React from 'react'
+import React from 'react';
 
-export default function VideoPlayer({ videoId, displayResolutions }) {
+export default function VideoPlayer({ videoId, displayResolutions, animationDelay }) {
   return (
-    <section className="main-box-outer">
+    <section className="main-box-outer slide-up" style={{ animationDelay: `${animationDelay}s`}}>
         <h2 className="section-title" id="download-title">Original Video
         <button className="download-button" onClick={displayResolutions}>
             <img className="download-icon" src="download.svg" alt="Download"></img>

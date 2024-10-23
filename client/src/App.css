@@ -492,4 +492,29 @@ progress[value] {
     .comment-box {
         height: 75vw;
     }
+
+    .modal-header {
+        margin-top: 10px;
+    }
+}
+
+/* ANIMATIONS */
+
+/* Define the slide-up animation */
+@keyframes slideUp {
+    0% {
+        opacity: 0;
+        transform: translateY(100px); /* Start below the viewport */
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0); /* End in the normal position */
+    }
+}
+  
+/* Create a reusable class for the slide-up animation */
+.slide-up {
+    opacity: 0; /* Initially hidden */
+    animation: slideUp 1s ease-out forwards;
+    /* 1s for duration, ease-out for smooth exit, forwards to keep final state */
 }

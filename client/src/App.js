@@ -175,15 +175,15 @@ function App() {
 
         {videoSummary && (
           <div className="result">
-            <VideoPlayer videoId={videoId} displayResolutions={displayResolutions}/>
-            <SummaryBox summaryTitle={"Video Summary"} summaryText={videoSummary}/>
+            <VideoPlayer videoId={videoId} displayResolutions={displayResolutions} animationDelay={0}/>
+            <SummaryBox summaryTitle={"Video Summary"} summaryText={videoSummary} animationDelay={0.5}/>
           </div>
         )}
 
         {commentSummary && (
           <div className="result">
-            <CommentSection comments={comments}/>
-            <SummaryBox summaryTitle={"Comments Summary"} summaryText={commentSummary}/>
+            <CommentSection comments={comments} animationDelay={0.75}/>
+            <SummaryBox summaryTitle={"Comments Summary"} summaryText={commentSummary} animationDelay={1}/>
           </div>
         )}
 
