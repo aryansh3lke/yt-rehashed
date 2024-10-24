@@ -1,4 +1,5 @@
 import React from 'react';
+import VideoEmbed from './VideoEmbed';
 
 export default function VideoPlayer({ videoId, displayResolutions, animationDelay }) {
   return (
@@ -9,12 +10,7 @@ export default function VideoPlayer({ videoId, displayResolutions, animationDela
         </button>
         </h2>
         <div className="main-box-inner video-box">
-        <iframe
-            className="video-player"
-            title="YouTube Video Player"
-            src={"https://www.youtube.com/embed/" + videoId}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen">
-        </iframe>
+          <VideoEmbed videoId={videoId} />
         </div>
     </section>
   )
