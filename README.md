@@ -1,6 +1,6 @@
 # YT Rehashed
 
-An AI tool to quickly generate quality summaries of YouTube videos and download them at high resolutions. Summarize and download your videos here: [ytrehashed.com](ytrehashed.com)
+An AI tool to quickly generate quality summaries of YouTube videos and download videos at high resolutions. Summarize and download your videos here: [ytrehashed.com](ytrehashed.com)
 
 ## Table of Contents
 
