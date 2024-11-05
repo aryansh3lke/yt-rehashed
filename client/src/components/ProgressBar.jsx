@@ -4,6 +4,7 @@ export default function ProgressBar({ progress, setProgress, endpoint, barTrigge
     // create hook for mounting component
     
     useEffect(() => {
+        setProgress(0.0);
         const getProgress = async () => {
             if (progress === 100.0) {
                 clearInterval(interval);

@@ -604,7 +604,11 @@ def get_download():
 
         @after_this_request
         def remove_file(response):
+            global combined_progress
+            global progress
             try:
+                combined_progress = 0
+                progress = {'video': 0, 'audio': 0, 'ffmpeg': 0}    
                 os.remove(output_file)
             except Exception as e:
                 print(f"Error removing file: {str(e)}")
