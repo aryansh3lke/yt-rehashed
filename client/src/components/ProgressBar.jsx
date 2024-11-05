@@ -1,11 +1,14 @@
-import React, { useEffect } from 'react'
-import '../App.css'
+import React, { useEffect } from 'react';
 
 export default function ProgressBar({ progress, setProgress, endpoint, barTrigger }) {
+    // create hook for mounting component
     
-
     useEffect(() => {
         const getProgress = async () => {
+            if (progress === 100.0) {
+                clearInterval(interval);
+            }
+
             fetch(endpoint)
                 .then(res => res.json())
                 .then(data => {
@@ -16,7 +19,7 @@ export default function ProgressBar({ progress, setProgress, endpoint, barTrigge
                 });
         }
 
-        const interval = setInterval(getProgress, 200);
+        const interval = setInterval(getProgress, 500);
 
         return () => {
             clearInterval(interval);

@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 import ModalHeader from './ModalHeader';
 import CloseButton from './CloseButton';
 import Loader from './Loader';
@@ -36,12 +36,14 @@ export default function DownloadModal({ downloadModal, setDownloadModal,
                           setSelectedResolution={setSelectedResolution}
                         />
 
-                        <ProgressBar
+                        {isDownloading && (
+                          <ProgressBar
                           progress={progress}
                           setProgress={setProgress}
                           endpoint={progressEndpoint}
                           barTrigger={isDownloading}
-                        />
+                          />
+                        )}
 
                         <DownloadVideoButton
                           downloadVideo={downloadVideo}

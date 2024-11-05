@@ -17,7 +17,11 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+
+# Initialize OpenAI API client and 
 client = OpenAI()
+
+# Initialize YouTube Comment Downloader
 downloader = YoutubeCommentDownloader()
 
 # Rotating residential proxies to avoid IP bans for web-scraping
@@ -262,6 +266,7 @@ def update_combined_progress():
     """
 
     global combined_progress
+    global progress
     video_progress = min(40.0, progress['video'] * 0.4)
     audio_progress = min(40.0, progress['audio'] * 0.4)
     ffmpeg_progress = min(20.0, progress['ffmpeg'] * 0.2)
@@ -290,7 +295,7 @@ def clean_hook_str(ansi_str):
         if char.isnumeric() or char == '.':
             clean_str += char
     
-    if os.getenv('ENV', '') == 'development':
+    if os.getenv('OS', '') == 'macOS':
         return clean_str[3:]
 
     return clean_str
@@ -558,6 +563,7 @@ def get_download():
             'format': f'bestvideo[height<={video_resolution[:-1]}][vcodec^=avc1]',  # Limit resolution and choose best video with H.264 codec
             'outtmpl': f'downloads/{sanitized_title}_video.mp4',
             'progress_hooks': [video_progress_hook],
+            'quiet': True, 
         }
         
         # Options for downloading audio only
@@ -565,6 +571,7 @@ def get_download():
             'format': 'bestaudio[ext=m4a]',  # Choose best audio
             'outtmpl': f'downloads/{sanitized_title}_audio.m4a',
             'progress_hooks': [audio_progress_hook],
+            'quiet': True, 
         }
         
         # Download video
