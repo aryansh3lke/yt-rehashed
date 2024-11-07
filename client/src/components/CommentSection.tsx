@@ -1,6 +1,12 @@
-import React from 'react';
+import { Comment } from '../types/interfaces';
 
-export default function CommentSection({ comments, animationDelay }) {
+export default function CommentSection({
+    comments,
+    animationDelay
+}: {
+    comments: Comment[],
+    animationDelay: number
+}) {
     return (
         <section className="main-box-outer slide-up" style={{ animationDelay: `${animationDelay}s`}}>
             <h2 className="section-title">Popular Comments</h2>

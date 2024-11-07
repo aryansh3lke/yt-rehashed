@@ -1,6 +1,8 @@
-import React from 'react'
-
-export default function VideoEmbed({ videoId }) {
+export default function VideoEmbed({
+    videoId
+}: {
+    videoId: string;
+}) {
     return (
         <iframe
             className='video-player'

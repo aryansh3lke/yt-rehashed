@@ -1,8 +1,17 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
-export default function ProgressBar({ progress, setProgress, endpoint, barTrigger }) {
+export default function ProgressBar({
+    progress,
+    setProgress,
+    endpoint,
+    barTrigger
+}: {
+    progress: number;
+    setProgress: React.Dispatch<React.SetStateAction<number>>
+    endpoint: string;
+    barTrigger: boolean;
+}) {
     // create hook for mounting component
-    
     useEffect(() => {
         setProgress(0.0);
         const getProgress = async () => {

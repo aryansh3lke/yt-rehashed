@@ -1,6 +1,16 @@
-import React from 'react'
-
-export default function LinkForm({ prompt, placeholder, inputLink, setLink, onSubmit }) {
+export default function LinkForm({
+  prompt,
+  placeholder,
+  inputLink,
+  setLink,
+  onSubmit
+}: {
+  prompt: string,
+  placeholder: string,
+  inputLink: string,
+  setLink: React.Dispatch<React.SetStateAction<string>>,
+  onSubmit: (e: React.FormEvent) => void
+}) {
   return (
     <div>
         <h3>{prompt}</h3>

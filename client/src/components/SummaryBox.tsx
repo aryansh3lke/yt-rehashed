@@ -1,6 +1,12 @@
-import React from 'react'
-
-export default function SummaryBox({ summaryTitle, summaryText, animationDelay }) {
+export default function SummaryBox({
+  summaryTitle,
+  summaryText,
+  animationDelay
+}: {
+  summaryTitle: string,
+  summaryText: string,
+  animationDelay: number
+}) {
   return (
     <section className="main-box-outer slide-up" style={{ animationDelay: `${animationDelay}s`}}>
         <h2 className="section-title">{summaryTitle}</h2>

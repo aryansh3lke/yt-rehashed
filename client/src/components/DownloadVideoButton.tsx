@@ -1,6 +1,8 @@
-import React from 'react'
-
-export default function DownloadVideoButton({ downloadVideo }) {
+export default function DownloadVideoButton({
+  downloadVideo
+}: {
+  downloadVideo: (e: React.MouseEvent) => void
+}) {
   return (
     <button className="submit-button" onClick={downloadVideo}>
         <p className="download-text">Download Video</p>

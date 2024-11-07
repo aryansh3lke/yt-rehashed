@@ -1,16 +1,36 @@
-import React from 'react';
 import ModalHeader from './ModalHeader';
 import CloseButton from './CloseButton';
 import Loader from './Loader';
 import ResolutionButtons from './ResolutionButtons';
 import ProgressBar from './ProgressBar';
 import DownloadVideoButton from './DownloadVideoButton';
+import { Resolution } from '../types/interfaces';
 
-export default function DownloadModal({ downloadModal, setDownloadModal, 
-    downloadLoader, downloadResolutions, selectedResolution, 
-    setSelectedResolution, progressEndpoint, isDownloading, downloadVideo, 
-    progress, setProgress }) {
-
+export default function DownloadModal({
+  downloadModal,
+  setDownloadModal, 
+  downloadLoader,
+  downloadResolutions,
+  selectedResolution, 
+  setSelectedResolution,
+  isDownloading,
+  downloadVideo, 
+  progress,
+  setProgress,
+  progressEndpoint,
+}: {
+  downloadModal: boolean,
+  setDownloadModal: React.Dispatch<React.SetStateAction<boolean>>,
+  downloadLoader: boolean,
+  downloadResolutions: Resolution[],
+  selectedResolution: Resolution,
+  setSelectedResolution: React.Dispatch<React.SetStateAction<Resolution>>,
+  isDownloading: boolean,
+  downloadVideo: (e: React.MouseEvent) => void,
+  progress: number,
+  setProgress: React.Dispatch<React.SetStateAction<number>>,
+  progressEndpoint: string,
+}) {
   return (
     <div>
       {downloadModal && (
@@ -26,7 +46,7 @@ export default function DownloadModal({ downloadModal, setDownloadModal,
                   />
                 ): (
                   <div>
-                    {downloadResolutions && downloadResolutions.length > 0 ? (
+                    {downloadResolutions.length > 0 ? (
                       <div id="download-result">
                         <ModalHeader title={"Select a resolution to download:"}/>
 

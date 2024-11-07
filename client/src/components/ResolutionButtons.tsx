@@ -1,6 +1,14 @@
-import React from 'react'
+import { Resolution } from '../types/interfaces';
 
-export default function ResolutionButtons({downloadResolutions, selectedResolution, setSelectedResolution}) {
+export default function ResolutionButtons({
+  downloadResolutions,
+  selectedResolution,
+  setSelectedResolution
+} : {
+  downloadResolutions: Resolution[],
+  selectedResolution: Resolution,
+  setSelectedResolution: React.Dispatch<React.SetStateAction<Resolution>>
+}) {
   return (
     <ul className="resolution-buttons">
         {downloadResolutions.map((resolution, index) => (
@@ -10,7 +18,7 @@ export default function ResolutionButtons({downloadResolutions, selectedResoluti
             id={resolution}
             value={resolution}
             checked={resolution === selectedResolution}
-            onChange={ (e) => {setSelectedResolution(e.target.value)} }
+            onChange={ (e) => {setSelectedResolution(e.target.value as Resolution)} }
             name="options"/>
             <label htmlFor={resolution}>{resolution}</label>
         </li>
