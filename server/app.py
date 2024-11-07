@@ -26,8 +26,8 @@ downloader = YoutubeCommentDownloader()
 
 # Rotating residential proxies to avoid IP bans for web-scraping
 proxies = {
-    "http": "http://20rpwnh3:3ohshcothlGQkc7Q@proxy.proxy-cheap.com:31112",
-    "https": "http://20rpwnh3:3ohshcothlGQkc7Q@proxy.proxy-cheap.com:31112"
+    "http": os.getenv('ROTATING_RESIDENTIAL_PROXY', ''),
+    "https": os.getenv('ROTATING_RESIDENTIAL_PROXY', ''),
 }
 
 # Global variables for tracking download progress
