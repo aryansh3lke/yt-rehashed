@@ -1,9 +1,7 @@
-export default function CloseButton({
-  onClose
-} : { 
-  onClose: () => void
-}) {
+export default function CloseButton({ onClose }: { onClose: () => void }) {
   return (
-    <button className="close-button" onClick={onClose}>&times;</button>
-  )
+    <button className="close-button" onClick={onClose}>
+      &times;
+    </button>
+  );
 }

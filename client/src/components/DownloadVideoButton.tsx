@@ -1,12 +1,17 @@
+import Button from "@mui/material/Button";
+
 export default function DownloadVideoButton({
-  downloadVideo
+  downloadVideo,
 }: {
-  downloadVideo: (e: React.MouseEvent) => void
+  downloadVideo: (e: React.MouseEvent) => void;
 }) {
   return (
-    <button className="submit-button" onClick={downloadVideo}>
-        <p className="download-text">Download Video</p>
-        <img className="download-icon-large inverted-icon" src="download.svg" alt="Download"></img>
-    </button>
-  )
+    <Button
+      variant="contained"
+      onClick={downloadVideo}
+      sx={{ backgroundColor: "red" }}
+    >
+      <p className="download-text">Download Video</p>
+    </Button>
+  );
 }

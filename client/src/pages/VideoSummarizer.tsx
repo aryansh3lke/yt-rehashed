@@ -1,34 +1,38 @@
 import "../styles/App.css";
 import { useState } from "react";
-import Logo from "../components/Logo";
 import LinkForm from "../components/LinkForm";
 import Loader from "../components/Loader";
 import VideoPlayer from "../components/VideoPlayer";
 import CommentSection from "../components/CommentSection";
 import SummaryBox from "../components/SummaryBox";
 import DownloadModal from "../components/DownloadModal";
-import { Comment, Resolution } from "../types/interfaces";
+import ErrorAlert from "../components/ErrorAlert";
+import { Caption, Comment, Resolution } from "../types/interfaces";
 
 // Access Vercel environment variable in production to reach deployed backend server on Railway
 const PROXY_URL = process.env.REACT_APP_PROXY_URL || "http://localhost:8000";
 
-export default function Summarizer() {
+export default function VideoSummarizer() {
   const [inputLink, setLink] = useState<string>("");
   const [videoId, setVideoId] = useState<string>("");
   const [videoTitle, setVideoTitle] = useState<string>("");
+  const [seekTime, setSeekTime] = useState<number>(0);
+  const [captions, setCaptions] = useState<Caption[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [videoSummary, setVideoSummary] = useState<string>("");
   const [commentSummary, setCommentSummary] = useState<string>("");
   const [summaryLoader, setSummaryLoader] = useState<boolean>(false);
+  const [alert, setAlert] = useState<string>("");
 
   const [downloadModal, setDownloadModal] = useState<boolean>(false);
   const [downloadLoader, setDownloadLoader] = useState<boolean>(false);
   const [downloadResolutions, setDownloadResolutions] = useState<Resolution[]>(
     [],
   );
+  const [downloadError, setDownloadError] = useState<string>("");
+
   const [selectedResolution, setSelectedResolution] = useState<Resolution>("");
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
-  const [progress, setProgress] = useState<number>(0);
 
   /**
    * Generate summaries for a YouTube video based on the provided URL.
@@ -45,11 +49,15 @@ export default function Summarizer() {
     setLink("");
     setVideoId("");
     setVideoTitle("");
+    setSeekTime(0);
+    setCaptions([]);
     setComments([]);
     setVideoSummary("");
     setCommentSummary("");
+    setAlert("");
     setDownloadResolutions([]);
     setSelectedResolution("");
+    setDownloadError("");
 
     setSummaryLoader(true);
 
@@ -64,10 +72,12 @@ export default function Summarizer() {
           throw new Error(body.error);
         }
 
+        console.log(body);
         // initalize relevant state hooks
         setSummaryLoader(false);
         setVideoId(body.video_id);
         setVideoTitle(body.video_title);
+        setCaptions(body.captions);
         setComments(body.comments);
         setVideoSummary(body.video_summary);
         setCommentSummary(body.comments_summary);
@@ -78,7 +88,7 @@ export default function Summarizer() {
             "The servers are currently down. Please try again later.";
         }
         setSummaryLoader(false);
-        window.alert(error.message);
+        setAlert(error.message);
       });
   };
 
@@ -135,7 +145,7 @@ export default function Summarizer() {
 
     if (selectedResolution === "") {
       // throw warning if no resolution is selected
-      window.alert("Please select a resolution!");
+      setDownloadError("Please select a resolution!");
     } else {
       try {
         setIsDownloading(true);
@@ -160,8 +170,7 @@ export default function Summarizer() {
         setIsDownloading(false);
       } catch (error) {
         setIsDownloading(false);
-        console.error("There was a problem with the fetch operation:", error);
-        window.alert("Failed to download the video. Please try again.");
+        setDownloadError("An error occurred while downloading the video.");
       }
     }
   };
@@ -183,63 +192,68 @@ export default function Summarizer() {
   };
 
   return (
-    <div className="app">
-      <div className="app-main">
-        <Logo
-          logoTitle={"YT Rehashed"}
-          logoSrc={process.env.PUBLIC_URL + "/logo512.png"}
-        />
+    <div className="flex flex-col items-center justify-center gap-5">
+      {alert && <ErrorAlert message={alert} setMessage={setAlert} />}
 
-        <LinkForm
-          prompt={"Enter the link to summarize your YouTube video:"}
-          placeholder={"https://www.youtube.com/watch?v="}
-          inputLink={inputLink}
-          setLink={setLink}
-          onSubmit={generateSummaries}
-        />
+      <LinkForm
+        prompt={
+          "Enter your YouTube video link to get a detailed summary of the transcript and comments"
+        }
+        placeholder={"https://www.youtube.com/watch?v="}
+        inputLink={inputLink}
+        setLink={setLink}
+        onSubmit={generateSummaries}
+      />
 
-        <Loader loaderTrigger={summaryLoader} loaderType={"summary-loader"} />
+      <Loader loaderTrigger={summaryLoader} loaderType={"summary-loader"} />
 
-        {videoSummary && (
-          <div className="result">
-            <VideoPlayer
-              videoId={videoId}
-              displayResolutions={displayResolutions}
-              animationDelay={0}
-            />
-            <SummaryBox
-              summaryTitle={"Video Summary"}
-              summaryText={videoSummary}
+      {videoSummary && (
+        <div className="result">
+          <VideoPlayer
+            videoId={videoId}
+            captions={captions}
+            seekTime={seekTime}
+            setSeekTime={setSeekTime}
+            displayResolutions={displayResolutions}
+            animationDelay={0}
+          />
+          {/* <TranscriptBox
+              captions={captions}
+              setSeekTime={setSeekTime}
               animationDelay={0.5}
-            />
-          </div>
-        )}
+            /> */}
+          <SummaryBox
+            summaryTitle={"Video Summary"}
+            summaryText={videoSummary}
+            animationDelay={0.75}
+          />
+        </div>
+      )}
 
-        {commentSummary && (
-          <div className="result">
-            <CommentSection comments={comments} animationDelay={0.75} />
-            <SummaryBox
-              summaryTitle={"Comments Summary"}
-              summaryText={commentSummary}
-              animationDelay={1}
-            />
-          </div>
-        )}
+      {commentSummary && (
+        <div className="result">
+          <CommentSection comments={comments} animationDelay={1.25} />
+          <SummaryBox
+            summaryTitle={"Comments Summary"}
+            summaryText={commentSummary}
+            animationDelay={2}
+          />
+        </div>
+      )}
 
-        <DownloadModal
-          downloadModal={downloadModal}
-          setDownloadModal={setDownloadModal}
-          downloadLoader={downloadLoader}
-          downloadResolutions={downloadResolutions}
-          selectedResolution={selectedResolution}
-          setSelectedResolution={setSelectedResolution}
-          progressEndpoint={PROXY_URL + "/api/get-progress"}
-          isDownloading={isDownloading}
-          downloadVideo={downloadVideo}
-          progress={progress}
-          setProgress={setProgress}
-        />
-      </div>
+      <DownloadModal
+        downloadModal={downloadModal}
+        setDownloadModal={setDownloadModal}
+        downloadLoader={downloadLoader}
+        downloadResolutions={downloadResolutions}
+        selectedResolution={selectedResolution}
+        setSelectedResolution={setSelectedResolution}
+        downloadError={downloadError}
+        setDownloadError={setDownloadError}
+        progressEndpoint={PROXY_URL + "/api/get-progress"}
+        isDownloading={isDownloading}
+        downloadVideo={downloadVideo}
+      />
     </div>
   );
 }

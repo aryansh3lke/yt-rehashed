@@ -1,15 +1,20 @@
+import CircularProgress from "@mui/material/CircularProgress";
 export default function Loader({
   loaderTrigger,
-  loaderType
+  loaderType,
 }: {
-  loaderTrigger: boolean,
-  loaderType: string
+  loaderTrigger: boolean;
+  loaderType: string;
 }) {
   return (
-    <div className='loader-div'>
-        {loaderTrigger && (
-            <div className={`loader ${loaderType}`}></div>
-        )}
-    </div>
-  )
+    <>
+      {loaderTrigger && (
+        <div
+          className={`loader-div ${loaderType === "summary-loader" && "mt-24"}`}
+        >
+          <CircularProgress color="secondary" size={100} />
+        </div>
+      )}
+    </>
+  );
 }
