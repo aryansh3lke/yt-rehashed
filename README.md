@@ -6,12 +6,17 @@ An AI tool to quickly generate quality summaries of YouTube videos and download 
 
 1. [Introduction](#introduction)
 2. [Features](#features)
-3. [Usage](#usage)
-4. [Installation](#installation)
+3. [Tech Stack](#tech-stack)
+4. [Usage](#usage)
+5. [Installation](#installation)
 
 ## Introduction
 
 This full-stack React-Flask web application is designed to help users quickly grasp the content of YouTube videos through summaries generated with the help of OpenAI's API and ChatGPT-3.5-turbo. This tool is especially useful for students, researchers, and anyone who wants to save time while consuming long-form video content.
+
+When a user submits the link to their YouTube video on the React Router frontend, a REST API call is made to the Flask backend to extract the video's transcript and comments. Rather than reinventing the wheel and webscraping this information, YT Rehashed takes advantage of existing Python libraries that handle each task. Once this information is obtained, ChatGPT is prompted to summarize both the video and the comments section with OpenAI's API. The transcript, comments, and summaries are all returned together to the frontend for the user to see.
+
+The user also has the option to download the given video at any of the available resolutions. With the YT-DLP library, the audio and video streams are downloaded separately since  combined streams are not available at high resolutions. FFmpeg is then used to merge these individual streams and the download is streamed back to the user as a blob.
 
 ## Features
 
@@ -19,6 +24,31 @@ This full-stack React-Flask web application is designed to help users quickly gr
 - Fast video downloads for all available resolutions
 - Video player and top comments displayed next to the summaries
 - Support for all long-form Youtube videos up to 1 hour
+
+## Tech Stack
+
+### Frontend
+
+<b>Framework:</b> [React Router (TypeScript)](https://reactrouter.com)\
+<b>Styling:</b> [Tailwind CSS](https://tailwindcss.com), [Material UI](https://mui.com/material-ui)
+
+### Backend
+
+<b>Framework:</b> [Flask (Python)](https://flask.palletsprojects.com/en/stable)\
+
+### DevOps
+
+<b>Frontend Deployment:</b> [Vercel](https://vercel.com)\
+<b>Backend Deployment:</b> [Railway](https://railway.com)\
+<b>Rotating Residential Proxy:</b> [ProxyCheap](https://www.proxy-cheap.com)\
+<b>DNS Provider:</b> [Porkbun](https://porkbun.com)
+
+### Libraries
+
+<b>Transcript Extraction:</b> [YouTubeTranscriptAPI](https://github.com/jdepoix/youtube-transcript-api)\
+<b>Comment Extraction:</b> [YouTubeCommentDownloader](https://github.com/egbertbouman/youtube-comment-downloader)\
+<b>Text Summarization:</b> [OpenAI API (ChatGPT 3.5-turbo)](https://github.com/openai/openai-python)\
+<b>Video Downloading:</b> [YoutubeDL](https://github.com/yt-dlp/yt-dlp), [FFmpeg](https://www.ffmpeg.org)
 
 ## Usage
 
