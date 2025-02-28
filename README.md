@@ -34,7 +34,7 @@ The user also has the option to download the given video at any of the available
 
 ### Backend
 
-<b>Framework:</b> [Flask (Python)](https://flask.palletsprojects.com/en/stable)\
+<b>Framework:</b> [Flask (Python)](https://flask.palletsprojects.com/en/stable)
 
 ### DevOps
 
@@ -52,17 +52,20 @@ The user also has the option to download the given video at any of the available
 
 ## Usage
 
-### 1. Enter the link of your YouTube video
+### 1. Enter the link of your YouTube video and click the summarize button.
 
-![Before](images/usage-before.png)
+![screencapture-ytrehashed-2025-02-27-20_17_03](https://github.com/user-attachments/assets/ee2dddee-3f80-4bdf-af73-fc73a0800a57)
 
-### 2. After about 5-10 seconds, the original video, comments, and summaries will show up.
 
-![After](images/usage-after.png)
+### 2. After about 10-15 seconds, the original video, comments, and summaries will show up.
+
+![screencapture-ytrehashed-2025-02-27-20_14_20](https://github.com/user-attachments/assets/2c3f727b-70b6-4a25-b333-995e274c8643)
+
 
 ### 3. Download the original video at different resolutions.
 
-![Video Downloader Feature](images/download-feature-2.png)
+![screencapture-ytrehashed-2025-02-27-20_19_38](https://github.com/user-attachments/assets/b9a996cc-fa69-4e9a-a49e-bdc27b5cf65d)
+
 
 ## Installation
 
