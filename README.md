@@ -6,7 +6,7 @@ An AI tool to quickly generate quality summaries of YouTube videos and download 
 
 1. [Introduction](#introduction)
 2. [Features](#features)
-4. [Usage](#usage)
+3. [Usage](#usage)
 4. [Installation](#installation)
 
 ## Introduction
@@ -42,42 +42,35 @@ Follow these steps to set up YT Rehashed locally:
 
 `git clone https://github.com/asshelke/yt-rehashed.git`
 
-#### 2. Navigate to the client directory (frontend)
-
-`cd client`
-
-#### 3. Install all necessary React dependencies
-
-`npm install`
-
-#### 4. Start the React frontend server
-
-`npm start`
-
-#### 5. Navigate to the server directory (backend)
+#### 2. Navigate to the server directory (backend)
 
 `cd server`
 
-#### 6. Install all necessary Python dependencies
-
-`pip install -r requirements.txt`
-
-#### 7. Obtain an OpenAI API Key
+#### 3. Obtain an OpenAI API Key
 
 https://platform.openai.com/api-keys
 
 > IMPORTANT: You need to deposit some money into your OpenAI account to use the API.
 
-#### 8. Add an environment variable for the key in a .env file
+#### 4. Add a .env file with the following environment variables
 
-`OPENAI_API_KEY=your_api_key`
+```
+OPENAI_API_KEY=<your-api-key>
+ENV=development
+```
 
-> NOTE: Make sure to place the `.env` file in the `/server/` directory.
+#### 5. Navigate to the client directory (frontend)
 
-#### 9. Start the Flask backend server
+`cd ../client`
 
-`python app.py`
+#### 6. Install all necessary Node and Python dependencies
 
-#### 10. View the website locally
+`npm run init`
+
+#### 7. Run the React and Flask servers concurrently
+
+`npm run stack`
+
+#### 8. View the website locally
 
 http://localhost:3000
