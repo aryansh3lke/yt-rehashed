@@ -38,14 +38,17 @@ export default function Navbar() {
 
   return (
     <AppBar
-      position="static"
+      position="sticky"
       sx={{
         width: "100%",
         backgroundColor: theme.palette.mode === "light" ? "#ffffff" : "#121212",
         backgroundImage: "none",
-        bottomBorder:
-          theme.palette.mode === "dark" ? "1px solid #ffffff" : "none",
-        boxShadow: theme.palette.mode === "dark" ? "none" : "",
+        boxShadow:
+          theme.palette.mode === "dark"
+            ? "none"
+            : "0px 2px 4px rgba(0, 0, 0, 0.1)",
+        borderBottom:
+          theme.palette.mode === "dark" ? "1.5px solid #303030" : "none",
       }}
       enableColorOnDark
     >
