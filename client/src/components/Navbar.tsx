@@ -38,7 +38,7 @@ export default function Navbar() {
 
   return (
     <AppBar
-      position="sticky"
+      position="static"
       sx={{
         width: "100%",
         backgroundColor: theme.palette.mode === "light" ? "#ffffff" : "#121212",
