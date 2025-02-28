@@ -1,4 +1,3 @@
-from celery import Celery
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_file, after_this_request
 from flask_cors import CORS
@@ -20,15 +19,6 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
-
-# Redis URL from Railway
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-
-app.config["CELERY_BROKER_URL"] = REDIS_URL
-app.config["CELERY_RESULT_BACKEND"] = REDIS_URL
-
-celery = Celery(app.name, broker=app.config["CELERY_BROKER_URL"])
-celery.conf.update(app.config)
 
 # Initialize OpenAI API client
 client = OpenAI()
