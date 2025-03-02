@@ -73,7 +73,7 @@ Follow these steps to set up YT Rehashed locally:
 
 #### 1. Clone the repository
 
-`git clone https://github.com/asshelke/yt-rehashed.git`
+`git clone https://github.com/aryansh3lke/yt-rehashed.git`
 
 #### 2. Navigate to the server directory (backend)
 
@@ -91,6 +91,7 @@ https://platform.openai.com/api-keys
 OPENAI_API_KEY=<your-api-key>
 ENV=development
 ```
+> IMPORTANT: Make sure to set `ENV=production` when deploying the Flask server.
 
 #### 5. Navigate to the client directory (frontend)
 
