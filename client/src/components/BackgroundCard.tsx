@@ -36,6 +36,24 @@ export default function BackgroundCard({
             display: "flex",
             flexDirection: "column",
             flex: 1,
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 1,
+            padding: 2,
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-track": {
+              background: "#f1f1f1",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              background: "#888",
+              borderRadius: "4px",
+            },
+            "&::-webkit-scrollbar-thumb:hover": {
+              background: "#555",
+            },
           }}
         >
           <Typography

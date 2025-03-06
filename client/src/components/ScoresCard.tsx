@@ -7,32 +7,14 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { useTheme } from "@mui/material/styles";
 
 const getScoreColor = (value: number, isDarkMode: boolean): string => {
-  if (isDarkMode) {
-    // Bright colors for dark mode
-    if (value <= 50) {
-      const ratio = value / 50;
-      const red = 255;
-      const green = Math.round(255 * ratio);
-      return `rgb(${red}, ${green}, 0)`;
-    } else {
-      const ratio = (value - 50) / 50;
-      const red = Math.round(255 * (1 - ratio));
-      const green = 255;
-      return `rgb(${red}, ${green}, 0)`;
-    }
+  if (value <= 50) {
+    // Red (0) to Orange (30)
+    const hue = 30 * (value / 50);
+    return `hsl(${hue}, 100%, 50%)`;
   } else {
-    // Muted colors for light mode
-    if (value <= 50) {
-      const ratio = value / 50;
-      const red = 255;
-      const green = Math.round(255 * ratio);
-      return `rgb(${red}, ${green}, 0)`;
-    } else {
-      const ratio = (value - 50) / 50;
-      const red = Math.round(255 * (1 - ratio));
-      const green = 255;
-      return `rgb(${red}, ${green}, 0)`;
-    }
+    // Orange (30) to Green (120)
+    const hue = 30 + 90 * ((value - 50) / 50);
+    return `hsl(${hue}, 100%, 50%)`;
   }
 };
 
