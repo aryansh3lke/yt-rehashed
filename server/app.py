@@ -2,10 +2,11 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_file, after_this_request
 from flask_cors import CORS
 from itertools import islice
+import json
 from openai import OpenAI, OpenAIError
 import os
-import pytest
 import re
+import requests
 from requests.exceptions import HTTPError
 import subprocess
 import tiktoken
@@ -13,7 +14,7 @@ from waitress import serve
 from youtube_comment_downloader import YoutubeCommentDownloader, SORT_BY_POPULAR
 from youtube_transcript_api import YouTubeTranscriptApi
 import yt_dlp
-import utils
+from datetime import datetime
 
 load_dotenv()
 
@@ -25,6 +26,9 @@ client = OpenAI()
 
 # Initialize YouTube Comment Downloader
 downloader = YoutubeCommentDownloader()
+
+# Initialize YouTube API key
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 # Rotating residential proxies to avoid IP bans for web-scraping
 proxies = {
@@ -40,9 +44,20 @@ progress = {"video": 0, "audio": 0, "ffmpeg": 0}
 CHATGPT_TOKEN_LIMIT = 16385
 RESPONSE_TOKEN_LIMIT = 500
 REQUEST_TOKEN_LIMIT = CHATGPT_TOKEN_LIMIT - RESPONSE_TOKEN_LIMIT
-CHATGPT_SYSTEM_ROLE = """
+CHATGPT_SUMMARIZING_ROLE = """
     You are a summarizing assistant for YouTube videos that restates the main 
     points of the video and summarizes viewer comments.
+"""
+CHATGPT_ANALYZING_ROLE = """
+    You are an analyzing assistant for YouTube content creators that performs
+    a background analysis on the creator's channel and provides a concise
+    summary of the creator's background. 
+"""
+CHATGPT_SCORE_ROLE = """
+    You are a scoring assistant for YouTube content creators that scores the creator's
+    credibility, content quality, and engagement. You should not include any details
+    about the research or analysis you conducted. Your output should be a single
+    floating point number between 0 and 100.
 """
 
 
@@ -392,6 +407,47 @@ def ffmpeg_progress_hook(line, estimated_duration):
         update_combined_progress()
 
 
+def extract_youtube_handle(url):
+    """
+    Extract YouTube handle from different URL formats:
+        - https://youtube.com/@username
+        - https://www.youtube.com/@username
+        - https://youtube.com/c/username
+        - https://www.youtube.com/channel/UCxxxxxxxxxx
+        - @username
+
+    Args:
+        url (str): The URL of the YouTube channel.
+
+
+
+
+    Returns: handle in @username format or None if not found
+    """
+    if not url:
+        return None
+
+    # If it's already in @handle format, return as is
+    if url.startswith("@"):
+        return url
+
+    # Try to extract handle from URL
+    handle_patterns = [
+        r"youtube\.com/(@[\w-]+)",  # matches @username in URL
+        r"youtube\.com/c/([\w-]+)",  # matches /c/username format
+        r"youtube\.com/channel/([\w-]+)",  # matches channel ID format
+    ]
+
+    for pattern in handle_patterns:
+        match = re.search(pattern, url)
+        if match:
+            handle = match.group(1)
+            # Add @ prefix if not present (for /c/ format)
+            return handle if handle.startswith("@") else f"@{handle}"
+
+    return None
+
+
 @app.route("/")
 def hello():
     return "You have reached the Youtube Rehashed Flask backend server!"
@@ -457,7 +513,7 @@ def get_summaries():
 
         # Generate transcript summary
         video_summary, transcript_error = ask_chatgpt(
-            transcript_prompt, CHATGPT_SYSTEM_ROLE
+            transcript_prompt, CHATGPT_SUMMARIZING_ROLE
         )
 
         if transcript_error is not None:
@@ -476,7 +532,7 @@ def get_summaries():
 
             # Generate comments summary
             comments_summary, comments_error = ask_chatgpt(
-                comments_prompt, CHATGPT_SYSTEM_ROLE
+                comments_prompt, CHATGPT_SUMMARIZING_ROLE
             )
 
             if comments_error is not None:
@@ -611,21 +667,31 @@ def get_download():
         }
 
         # Download video
+        print(f"Starting video download for {video_url}")
         with yt_dlp.YoutubeDL(video_opts) as ydl:
             info_dict = ydl.extract_info(video_url, download=False)
             estimated_duration = info_dict.get("duration", 0)
+            print(f"Video info extracted, duration: {estimated_duration}")
             ydl.download([video_url])
+            print("Video download completed")
 
         # Download audio
+        print("Starting audio download")
         with yt_dlp.YoutubeDL(audio_opts) as ydl:
             ydl.download([video_url])
+            print("Audio download completed")
 
         # Paths to the downloaded files
         video_file = f"downloads/{sanitized_title}_video.mp4"
         audio_file = f"downloads/{sanitized_title}_audio.m4a"
         output_file = f"downloads/{sanitized_title} [{video_resolution}].mp4"
 
+        print(
+            f"Checking if files exist: video={os.path.exists(video_file)}, audio={os.path.exists(audio_file)}"
+        )
+
         # Merge video and audio using ffmpeg without re-encoding
+        print("Starting ffmpeg merge")
         ffmpeg_command = [
             "ffmpeg",
             "-i",
@@ -638,6 +704,7 @@ def get_download():
             "copy",
             output_file,
         ]
+        print(f"FFmpeg command: {' '.join(ffmpeg_command)}")
         process = subprocess.Popen(
             ffmpeg_command,
             stdout=subprocess.PIPE,
@@ -645,10 +712,13 @@ def get_download():
             universal_newlines=True,
         )
         for line in process.stdout:
+            print(f"FFmpeg output: {line.strip()}")
             ffmpeg_progress_hook(line, estimated_duration)
         process.wait()
+        print(f"FFmpeg process completed with return code: {process.returncode}")
 
         # Cleanup: Delete the separate video and audio files
+        print("Cleaning up temporary files")
         os.remove(video_file)
         os.remove(audio_file)
 
@@ -695,25 +765,277 @@ def get_progress():
     return jsonify({"progress": combined_progress}), 200
 
 
-@app.route("/api/test-google-api", methods=["GET"])
-def test_google_api():
-    """Test Google API."""
+@app.route("/api/get-video-info", methods=["GET"])
+def get_video_info():
+    """
+    Returns the video id and title for the given video link
+
+    HTTP Method: GET
+
+    Request Parameters:
+        video_url (str): The URL of the YouTube video.
+
+    Responses:
+        200: The video ID and title
+        400: Missing parameters or invalid link.
+        500: An error occurred when fetching the video info.
+
+    Example:
+        GET /api/get-video-info?video_url=https://www.youtube.com/watch?v=dQw4w9WgXcQ
+    """
+
+    # Save parameters from request
+    video_url = request.args.get("video_url")
+
+    # Check for missing parameters
+    if not video_url:
+        return jsonify({"error": "Video URL is missing!"}), 400
+
     try:
-        return (
-            jsonify(
-                {"transcript": utils.fetch_transcript_with_google_api("E5BaGpnrgao")}
-            ),
-            200,
-        )
+        video_id = extract_video_id(video_url)
+
+        if video_id is None:
+            return jsonify({"error": "Please enter a valid YouTube URL!"}), 400
+
+        video_title = get_youtube_video_title(video_id)
+        return jsonify({"video_id": video_id, "video_title": video_title}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
 
 
-@app.cli.command("test")
-def run_tests():
-    """Run tests using pytest."""
-    exit_code = pytest.main(["-v", "--disable-warnings", "--durations=0"])
-    exit(exit_code)
+@app.route("/api/get-creator-info", methods=["GET"])
+def get_creater_info():
+    """
+    Returns the video id and title for the given video link
+
+    HTTP Method: GET
+
+    Request Parameters:
+        channel_url (str): The URL of the creator's YouTube channel.
+
+    Responses:
+        200: Channel info including statistics, background, and crediblity score
+        400: Missing parameters or invalid link.
+        500: An error occurred when fetching channel info or analyzing credibility.
+
+    Example:
+        GET /api/get-creator-info?channel_url=https://www.youtube.com/@mrbeast
+    """
+    channel_url = request.args.get("channel_url")
+
+    if channel_url is None:
+        return jsonify({"error": "Channel URL is missing!"}), 400
+
+    # Extract handle from URL
+    handle = extract_youtube_handle(channel_url)
+
+    if handle is None:
+        return jsonify({"error": "Invalid Channel URL!"}), 400
+
+    creator_info = {"channel": channel_url}
+
+    # Fetch channel ID based on handle
+    try:
+        id_response = requests.get(
+            f"https://www.googleapis.com/youtube/v3/channels?part=id&forHandle={handle}&key={YOUTUBE_API_KEY}"
+        ).json()
+        if "items" in id_response and len(id_response["items"]) > 0:
+            id = id_response["items"][0]["id"]
+            creator_info["id"] = id
+            creator_info["handle"] = handle
+
+        else:
+            print(f"Could not find the channel for the handle {handle}")
+    except:
+        return jsonify({"error": "Creator handle does not exist!"}), 400
+
+    # Fetch channel statistics based on ID
+    try:
+        statistics_response = requests.get(
+            f"https://www.googleapis.com/youtube/v3/channels?part=statistics&id={id}&key={YOUTUBE_API_KEY}"
+        ).json()
+
+        if "items" in statistics_response and len(statistics_response["items"]) > 0:
+            creator_info["statistics"] = statistics_response["items"][0]["statistics"]
+        else:
+            return (
+                jsonify({"error": f"Channel statistics do not exist for {handle}!"}),
+                500,
+            )
+    except:
+        return jsonify({"error": "Channel statistics could not be fetched!"}), 500
+
+    # Fetch channel avatar
+    try:
+        avatar_response = requests.get(
+            f"https://www.googleapis.com/youtube/v3/channels?part=snippet&id={id}&key={YOUTUBE_API_KEY}"
+        ).json()
+
+        if "items" in avatar_response and len(avatar_response["items"]) > 0:
+            thumbnails = avatar_response["items"][0]["snippet"]["thumbnails"]
+            # Try different thumbnail sizes in order of preference
+            if "maxres" in thumbnails:
+                creator_info["avatar"] = thumbnails["maxres"]["url"]
+            elif "high" in thumbnails:
+                creator_info["avatar"] = thumbnails["high"]["url"]
+            elif "medium" in thumbnails:
+                creator_info["avatar"] = thumbnails["medium"]["url"]
+            elif "default" in thumbnails:
+                creator_info["avatar"] = thumbnails["default"]["url"]
+            else:
+                creator_info["avatar"] = (
+                    "https://www.youtube.com/img/desktop/yt_1200.png"
+                )
+        else:
+            creator_info["avatar"] = "https://www.youtube.com/img/desktop/yt_1200.png"
+    except Exception as e:
+        print(f"Error fetching avatar: {str(e)}")
+        creator_info["avatar"] = "https://www.youtube.com/img/desktop/yt_1200.png"
+
+    # Fetch Channel Title
+    try:
+        title_response = requests.get(
+            f"https://www.googleapis.com/youtube/v3/channels?part=snippet&id={id}&key={YOUTUBE_API_KEY}"
+        ).json()
+        if "items" in title_response and len(title_response["items"]) > 0:
+            creator_info["title"] = title_response["items"][0]["snippet"]["title"]
+        else:
+            return (
+                jsonify({"error": f"Channel title does not exist for {handle}!"}),
+                500,
+            )
+    except:
+        return jsonify({"error": "Channel title could not be fetched!"}), 500
+
+    # Generate Background Information
+    try:
+        background_prompt = f"""
+        Give a parapgraph of background information about the following creator:
+        {creator_info["title"]} ({creator_info["handle"]})
+        """
+
+        background_response, _ = ask_chatgpt(background_prompt, CHATGPT_ANALYZING_ROLE)
+        creator_info["background"] = background_response
+    except:
+        return jsonify({"error": "Background information could not be fetched!"}), 500
+
+    # Generate Credibility Points and Score
+    try:
+        credibility_prompt = f"""
+        Analyze the current credibility of the following creator as of {datetime.now().strftime('%Y-%m-%d')}: 
+        {creator_info["title"]} ({creator_info["handle"]})
+        Current subscriber count: {creator_info["statistics"].get("subscriberCount", "Unknown")}
+
+        Return your analysis in the following JSON format:
+        {{
+            "points": [
+                // List of 3-5 specific points about the creator's current credibility
+                // Each point should focus on recent events, current status, and up-to-date information
+                // IMPORTANT: Recent controversies or misleading content should be heavily weighted
+                // For smaller creators, focus on their expertise, content quality, and community trust
+            ],
+            "score": // A number between 0 and 100 representing current credibility
+        }}
+        
+        Consider the following factors in your analysis, with special emphasis on recent events:
+        - Any recent controversies, misleading content, or factual inaccuracies (these should HEAVILY impact the score)
+        - Recent retractions, corrections, or apologies for incorrect information
+        - Current educational background or expertise in their niche
+        - Recent verification of claims and use of reliable sources
+        - Current track record of maintaining journalistic integrity
+        - Recent public perception and professional critiques
+        - Current content quality and accuracy
+        - Recent changes in content style or direction
+        - Current standing in their niche
+        - Recent partnerships or business ventures
+        - Current community interactions and controversies
+        - Recent growth trends and subscriber engagement
+        - For smaller creators:
+          * Focus on their expertise in their specific niche
+          * Consider their content quality relative to their experience level
+          * Evaluate their community engagement and trust
+          * Look at their consistency and dedication
+          * Consider their potential for growth and improvement
+        
+        Scoring Guidelines:
+        - Start at 100 points
+        - Subtract 30-50 points for any recent major controversies or proven instances of deliberate misinformation
+        - Subtract 20-30 points for current lack of relevant expertise
+        - Subtract 15-25 points for recent patterns of unverified claims
+        - Subtract 10-20 points for each recent instance of retracted misinformation
+        - Add back points only for consistently demonstrated recent expertise
+        - For smaller creators:
+          * Be more lenient with production quality deductions
+          * Consider their growth potential and dedication
+          * Focus on their expertise in their specific niche
+          * Consider their community engagement and trust
+        
+        The score should reflect current credibility and err on the side of being harsh rather than lenient.
+        For smaller creators, focus on their potential and dedication rather than just current metrics.
+        Ensure the response is valid JSON.
+        """
+
+        credibility_response, _ = ask_chatgpt(
+            credibility_prompt, CHATGPT_ANALYZING_ROLE
+        )
+        credibility_data = json.loads(credibility_response)
+        creator_info["credibilityPoints"] = credibility_data["points"]
+        creator_info["credibilityScore"] = credibility_data["score"]
+    except Exception as e:
+        return jsonify({"error": "Credibility analysis could not be completed"}), 500
+
+    # Generate Content Quality Score
+    try:
+        content_quality_prompt = f"""
+        Return a score between 0 and 100 for the following creator's content quality:
+        {creator_info["title"]} ({creator_info["handle"]})
+
+        You need to conduct your own research to gather the necessary data using the web.
+
+        Take the following into account:
+        - Quality and accuracy of the content
+        - Creativity and uniqueness of the content
+        - Reasonable upload frequency for their format of content
+
+        Make sure you return only a single floating point number between 0 and 100.
+        Do not return any text other than the score.
+        """
+
+        content_quality_response, _ = ask_chatgpt(
+            content_quality_prompt, CHATGPT_SCORE_ROLE
+        )
+        creator_info["contentQualityScore"] = re.search(
+            r"\d+", content_quality_response
+        ).group()
+    except Exception as e:
+        return (
+            jsonify({"error": "Content quality analysis could not be completed"}),
+            500,
+        )
+
+    # Generate Engagement Score
+    try:
+        engagement_prompt = f"""
+        Calculate a score between 0 and 100 for the following creator's engagement:
+        {creator_info["title"]} ({creator_info["handle"]})
+
+        You need to conduct your own research to gather the necessary data using the web.
+
+        Take the following into account:
+        - Number of views, likes, comments, and shares
+        - Engagement rate (comments per view, likes per view, shares per view)
+        - Overall impact and reach of the content
+
+        Make sure you return only a single floating point number between 0 and 100.
+        Do not return any text other than the score.
+        """
+
+        engagement_response, _ = ask_chatgpt(engagement_prompt, CHATGPT_SCORE_ROLE)
+        creator_info["engagementScore"] = re.search(r"\d+", engagement_response).group()
+    except Exception as e:
+        return jsonify({"error": "Engagement analysis could not be completed"}), 500
+
+    return jsonify({"creator_info": creator_info}), 200
 
 
 if __name__ == "__main__":
