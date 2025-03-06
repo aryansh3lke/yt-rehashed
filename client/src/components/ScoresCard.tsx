@@ -24,14 +24,14 @@ const getScoreColor = (value: number, isDarkMode: boolean): string => {
     // Muted colors for light mode
     if (value <= 50) {
       const ratio = value / 50;
-      const red = 200;
-      const green = Math.round(180 * ratio);
-      return `rgb(${red}, ${green}, ${Math.round(50 * ratio)})`;
+      const red = 255;
+      const green = Math.round(255 * ratio);
+      return `rgb(${red}, ${green}, 0)`;
     } else {
       const ratio = (value - 50) / 50;
-      const red = Math.round(200 * (1 - ratio));
-      const green = 180;
-      return `rgb(${red}, ${green}, ${Math.round(50 + 30 * ratio)})`;
+      const red = Math.round(255 * (1 - ratio));
+      const green = 255;
+      return `rgb(${red}, ${green}, 0)`;
     }
   }
 };
