@@ -422,6 +422,7 @@ def extract_youtube_handle(url):
         If channel ID is found, returns (None, channel_id)
         If neither is found, returns (None, None)
     """
+    # If URL is empty
     if not url:
         return None, None
 
