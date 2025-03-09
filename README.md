@@ -53,17 +53,36 @@ The user also has the option to download the given video at any of the available
 
 ## Usage
 
-### 1. Enter the link of your YouTube video and click the summarize button.
+### Video Summarizer
 
-![screencapture-ytrehashed-2025-02-27-20_17_03](https://github.com/user-attachments/assets/ee2dddee-3f80-4bdf-af73-fc73a0800a57)
+#### 1. Enter the link of your YouTube video and click the summarize button.
 
-### 2. After about 10-15 seconds, the original video, comments, and summaries will show up.
+![video-summarizer-link](https://github.com/user-attachments/assets/659d189b-43eb-44ee-ac62-63f77811ddb1)
 
-![screencapture-ytrehashed-2025-02-27-20_14_20](https://github.com/user-attachments/assets/2c3f727b-70b6-4a25-b333-995e274c8643)
+#### 2. After about 10-15 seconds, the original video, comments, and summaries will show up.
 
-### 3. Download the original video at different resolutions.
+![vide-summarizer-result](https://github.com/user-attachments/assets/2c3f727b-70b6-4a25-b333-995e274c8643)
 
-![screencapture-ytrehashed-2025-02-27-20_19_38](https://github.com/user-attachments/assets/b9a996cc-fa69-4e9a-a49e-bdc27b5cf65d)
+#### 3. Download the original video at different resolutions.
+
+![video-summarizer-resolutions](https://github.com/user-attachments/assets/b9a996cc-fa69-4e9a-a49e-bdc27b5cf65d)
+
+### Video Downloader
+
+#### 1. If you only want to download videos, there is a separate page for this feature.
+
+![video-downloader-page](https://github.com/user-attachments/assets/7de3674b-5e48-484d-8305-2d9358c864ab)
+
+### Creator Analyzer
+
+#### 1. Enter the link of a YouTube channel for the creator you want to analyze.
+
+![creator-analyzer-link](https://github.com/user-attachments/assets/bae3309c-52c1-44fc-ab43-8212c1796385)
+
+#### 2. After about 5 seconds, the creator's statistics, scores on different metrics, background info, and credibility analysis will show up.
+
+![creator-analyzer-results](https://github.com/user-attachments/assets/2858b545-04b4-4dcb-849d-907af85aa09b)
+
 
 ## Installation
 
@@ -103,7 +122,7 @@ YOUTUBE_API_KEY=<your-api-key>
 ROTATING_RESIDENTIAL_PROXY=<your-proxy>
 ```
 
-> IMPORTANT: Make sure to set `ENV=production` and obtain rotating residential proxy for production when deploying the Flask server.
+> IMPORTANT: Make sure to set `ENV=production` and obtain rotating residential proxy when deploying the Flask server in production.
 
 #### 6. Navigate to the client directory (frontend)
 
