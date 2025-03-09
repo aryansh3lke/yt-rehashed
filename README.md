@@ -16,7 +16,9 @@ This full-stack React-Flask web application is designed to help users quickly gr
 
 When a user submits the link to their YouTube video on the React Router frontend, a REST API call is made to the Flask backend to extract the video's transcript and comments. Rather than reinventing the wheel and webscraping this information, YT Rehashed takes advantage of existing Python libraries that handle each task. Once this information is obtained, ChatGPT is prompted to summarize both the video and the comments section with OpenAI's API. The transcript, comments, and summaries are all returned together to the frontend for the user to see.
 
-The user also has the option to download the given video at any of the available resolutions. With the YT-DLP library, the audio and video streams are downloaded separately since combined streams are not available at high resolutions. FFmpeg is then used to merge these individual streams and the download is streamed back to the user as a blob.
+The user also has the option to download the given video at any of the available resolutions, and a separate page exists just for this feature if the user only wants to download videos. With the YT-DLP library, the audio and video streams are downloaded separately since combined streams are not available at high resolutions. FFmpeg is then used to merge these individual streams and the download is streamed back to the user as a blob.
+
+One of the newest features is the creator analyzer which allows users to score their favorite or unkown content creators on different metrics and get an in depth credibility analysis. Currently, the creator analyzer is in its early stages and has not been fully developed but can be utilized in its beta version. On the analyzer's page, the YouTube Data API is used to fetch the statistics and channel avatar for the creator after the creator's handle or id is extracted from the input link. Then, ChatGPT is utilized to analysis the content quality, engagement, and crediblity of the creator.
 
 ## Features
 
@@ -44,12 +46,13 @@ The user also has the option to download the given video at any of the available
 <b>Rotating Residential Proxy:</b> [ProxyCheap](https://www.proxy-cheap.com)\
 <b>DNS Provider:</b> [Porkbun](https://porkbun.com)
 
-### Libraries
+### Libraries/APIs
 
-<b>Transcript Extraction:</b> [YouTubeTranscriptAPI](https://github.com/jdepoix/youtube-transcript-api)\
-<b>Comment Extraction:</b> [YouTubeCommentDownloader](https://github.com/egbertbouman/youtube-comment-downloader)\
-<b>Text Summarization:</b> [OpenAI API (ChatGPT 3.5-turbo)](https://github.com/openai/openai-python)\
+<b>Transcript Extraction:</b> [YouTube Transcript API](https://github.com/jdepoix/youtube-transcript-api)\
+<b>Comment Extraction:</b> [YouTube Comment Downloader](https://github.com/egbertbouman/youtube-comment-downloader)\
+<b>Text Summarization, Creator Analysis:</b> [OpenAI API (ChatGPT 3.5-turbo)](https://github.com/openai/openai-python)\
 <b>Video Downloading:</b> [YoutubeDL](https://github.com/yt-dlp/yt-dlp), [FFmpeg](https://www.ffmpeg.org)
+<b>Creator Statistics:</b> [YouTube Data API](https://developers.google.com/youtube/v3)
 
 ## Usage
 
