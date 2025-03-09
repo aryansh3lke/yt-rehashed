@@ -16,14 +16,15 @@ This full-stack React-Flask web application is designed to help users quickly gr
 
 When a user submits the link to their YouTube video on the React Router frontend, a REST API call is made to the Flask backend to extract the video's transcript and comments. Rather than reinventing the wheel and webscraping this information, YT Rehashed takes advantage of existing Python libraries that handle each task. Once this information is obtained, ChatGPT is prompted to summarize both the video and the comments section with OpenAI's API. The transcript, comments, and summaries are all returned together to the frontend for the user to see.
 
-The user also has the option to download the given video at any of the available resolutions. With the YT-DLP library, the audio and video streams are downloaded separately since  combined streams are not available at high resolutions. FFmpeg is then used to merge these individual streams and the download is streamed back to the user as a blob.
+The user also has the option to download the given video at any of the available resolutions. With the YT-DLP library, the audio and video streams are downloaded separately since combined streams are not available at high resolutions. FFmpeg is then used to merge these individual streams and the download is streamed back to the user as a blob.
 
 ## Features
 
 - High quality video and comment summaries by just submitting a link
 - Fast video downloads for all available resolutions
-- Video player and top comments displayed next to the summaries
+- Video player, transcript and top comments displayed next to the summaries
 - Support for all long-form Youtube videos up to 1 hour
+- Creator analyzer to assess channels on content quality, engagement, and credibility
 
 ## Tech Stack
 
@@ -56,16 +57,13 @@ The user also has the option to download the given video at any of the available
 
 ![screencapture-ytrehashed-2025-02-27-20_17_03](https://github.com/user-attachments/assets/ee2dddee-3f80-4bdf-af73-fc73a0800a57)
 
-
 ### 2. After about 10-15 seconds, the original video, comments, and summaries will show up.
 
 ![screencapture-ytrehashed-2025-02-27-20_14_20](https://github.com/user-attachments/assets/2c3f727b-70b6-4a25-b333-995e274c8643)
 
-
 ### 3. Download the original video at different resolutions.
 
 ![screencapture-ytrehashed-2025-02-27-20_19_38](https://github.com/user-attachments/assets/b9a996cc-fa69-4e9a-a49e-bdc27b5cf65d)
-
 
 ## Installation
 
@@ -85,26 +83,40 @@ https://platform.openai.com/api-keys
 
 > IMPORTANT: You need to deposit some money into your OpenAI account to use the API.
 
-#### 4. Add a .env file with the following environment variables
+#### 4. Obtain a YouTube Data API Key
+
+https://developers.google.com/youtube/v3/getting-started
+
+#### 5. Add a .env file with the following environment variables
 
 ```
-OPENAI_API_KEY=<your-api-key>
+# Development/Production
 ENV=development
-```
-> IMPORTANT: Make sure to set `ENV=production` when deploying the Flask server.
 
-#### 5. Navigate to the client directory (frontend)
+# Transcript and Comment Summarization, Creator Analysis
+OPENAI_API_KEY=<your-api-key>
+
+# Youtube Data API to extract creator statistics and other info
+YOUTUBE_API_KEY=<your-api-key>
+
+# YouTube Transcript API (Required in production to avoid IP bans)
+ROTATING_RESIDENTIAL_PROXY=<your-proxy>
+```
+
+> IMPORTANT: Make sure to set `ENV=production` and obtain rotating residential proxy for production when deploying the Flask server.
+
+#### 6. Navigate to the client directory (frontend)
 
 `cd ../client`
 
-#### 6. Install all necessary Node and Python dependencies
+#### 7. Install all necessary Node and Python dependencies
 
 `npm run init`
 
-#### 7. Run the React and Flask servers concurrently
+#### 8. Run the React and Flask servers concurrently
 
 `npm run stack`
 
-#### 8. View the website locally
+#### 9. View the website locally
 
 http://localhost:3000
