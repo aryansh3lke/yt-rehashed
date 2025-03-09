@@ -22,7 +22,11 @@ import { useTheme } from "@mui/material/styles";
 
 import AppLogo from "./AppLogo";
 
-const pages = ["Video Summarizer", "Video Downloader", "Creator Analyzer"];
+const pages = [
+  "Video Summarizer",
+  "Video Downloader",
+  "Creator Analyzer [Beta]",
+];
 const pageIcons = [
   <SummarizeIcon />,
   <DownloadForOfflineIcon />,
@@ -83,7 +87,11 @@ export default function Navbar() {
                 {pages.map((page, index) => (
                   <Box className="flex flex-row items-center" key={page}>
                     <Button
-                      href={`/${page.toLowerCase().replace(/\s/g, "-")}`}
+                      href={`/${page
+                        .toLowerCase()
+                        .replace(/\s/g, "-")
+                        .replace(/\[.*?\]/g, "")
+                        .replace(/-+$/, "")}`}
                       onClick={toggleDrawer(false)}
                       sx={{
                         color: "inherit",
@@ -167,7 +175,11 @@ export default function Navbar() {
                     {pages.map((page) => (
                       <Link
                         key={page}
-                        href={`/${page.toLowerCase().replace(/\s/g, "-")}`}
+                        href={`/${page
+                          .toLowerCase()
+                          .replace(/\s/g, "-")
+                          .replace(/\[.*?\]/g, "")
+                          .replace(/-+$/, "")}`}
                         underline="none"
                         sx={{
                           color:

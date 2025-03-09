@@ -51,7 +51,7 @@ export default function CreatorAnalyzer() {
       {alert && <ErrorAlert message={alert} setMessage={setAlert} />}
 
       <LinkForm
-        title="Creator Analyzer"
+        title="Creator Analyzer [Beta]"
         prompt={
           "Enter the channel link of a creator to assess their performance, credibility, and engagement"
         }
