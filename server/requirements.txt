@@ -88,4 +88,4 @@ Werkzeug==3.0.3
 wsproto==1.2.0
 youtube-comment-downloader==0.1.76
 youtube-transcript-api==0.6.2
-yt-dlp==2025.2.19
+yt-dlp==2024.9.27

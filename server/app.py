@@ -235,18 +235,14 @@ def get_youtube_video_title(video_url):
 
     Returns:
         str: The title of the YouTube video if successful, or None if the title could not be retrieved.
-
-    Examples:
-        >>> get_youtube_video_title("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-        'Rick Astley - Never Gonna Give You Up (Official Music Video)'
-        >>> get_youtube_video_title("invalid_url")
-        None
     """
 
     ydl_opts = {
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "cookiefile": "cookies.txt",  # Use cookies file instead of browser cookies
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -409,43 +405,51 @@ def ffmpeg_progress_hook(line, estimated_duration):
 
 def extract_youtube_handle(url):
     """
-    Extract YouTube handle from different URL formats:
+    Extract YouTube handle or channel ID from different URL formats:
         - https://youtube.com/@username
         - https://www.youtube.com/@username
         - https://youtube.com/c/username
+        - https://youtube.com/user/username
         - https://www.youtube.com/channel/UCxxxxxxxxxx
         - @username
 
     Args:
         url (str): The URL of the YouTube channel.
 
-
-
-
-    Returns: handle in @username format or None if not found
+    Returns:
+        tuple: (handle or None, channel_id or None)
+        If handle is found, returns (handle, None)
+        If channel ID is found, returns (None, channel_id)
+        If neither is found, returns (None, None)
     """
     if not url:
-        return None
+        return None, None
 
-    # If it's already in @handle format, return as is
+    # If it's already in @handle format
     if url.startswith("@"):
-        return url
+        return url, None
+
+    # Try to extract channel ID first
+    channel_id_pattern = r"youtube\.com/channel/([\w-]+)"
+    channel_match = re.search(channel_id_pattern, url)
+    if channel_match:
+        return None, channel_match.group(1)
 
     # Try to extract handle from URL
     handle_patterns = [
         r"youtube\.com/(@[\w-]+)",  # matches @username in URL
         r"youtube\.com/c/([\w-]+)",  # matches /c/username format
-        r"youtube\.com/channel/([\w-]+)",  # matches channel ID format
+        r"youtube\.com/user/([\w-]+)",  # matches /user/username format
     ]
 
     for pattern in handle_patterns:
         match = re.search(pattern, url)
         if match:
             handle = match.group(1)
-            # Add @ prefix if not present (for /c/ format)
-            return handle if handle.startswith("@") else f"@{handle}"
+            # Add @ prefix if not present (for /c/ and /user/ formats)
+            return handle if handle.startswith("@") else f"@{handle}", None
 
-    return None
+    return None, None
 
 
 @app.route("/")
@@ -584,7 +588,12 @@ def get_resolutions():
 
     try:
         video_url = f"https://www.youtube.com/watch?v={video_id}"
-        ydl_opts = {}
+        ydl_opts = {
+            "quiet": True,
+            "no_warnings": True,
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "cookiefile": "cookies.txt",  # Use cookies file instead of browser cookies
+        }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(video_url, download=False)
@@ -650,20 +659,27 @@ def get_download():
         video_url = f"https://www.youtube.com/watch?v={video_id}"
         sanitized_title = get_youtube_video_title(video_url)
 
+        # Common options for both video and audio downloads
+        common_opts = {
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "cookiefile": "cookies.txt",  # Use cookies file instead of browser cookies
+            "quiet": True,
+        }
+
         # Options for downloading video only
         video_opts = {
+            **common_opts,
             "format": f"bestvideo[height<={video_resolution[:-1]}][vcodec^=avc1]",  # Limit resolution and choose best video with H.264 codec
             "outtmpl": f"downloads/{sanitized_title}_video.mp4",
             "progress_hooks": [video_progress_hook],
-            "quiet": True,
         }
 
         # Options for downloading audio only
         audio_opts = {
+            **common_opts,
             "format": "bestaudio[ext=m4a]",  # Choose best audio
             "outtmpl": f"downloads/{sanitized_title}_audio.m4a",
             "progress_hooks": [audio_progress_hook],
-            "quiet": True,
         }
 
         # Download video
@@ -797,7 +813,7 @@ def get_video_info():
         if video_id is None:
             return jsonify({"error": "Please enter a valid YouTube URL!"}), 400
 
-        video_title = get_youtube_video_title(video_id)
+        video_title = get_youtube_video_title(video_url)
         return jsonify({"video_id": video_id, "video_title": video_title}), 200
     except Exception as e:
         return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
@@ -806,7 +822,7 @@ def get_video_info():
 @app.route("/api/get-creator-info", methods=["GET"])
 def get_creater_info():
     """
-    Returns the video id and title for the given video link
+    Returns the channel info for the given channel URL
 
     HTTP Method: GET
 
@@ -814,7 +830,7 @@ def get_creater_info():
         channel_url (str): The URL of the creator's YouTube channel.
 
     Responses:
-        200: Channel info including statistics, background, and crediblity score
+        200: Channel info including statistics, background, and credibility score
         400: Missing parameters or invalid link.
         500: An error occurred when fetching channel info or analyzing credibility.
 
@@ -826,33 +842,48 @@ def get_creater_info():
     if channel_url is None:
         return jsonify({"error": "Channel URL is missing!"}), 400
 
-    # Extract handle from URL
-    handle = extract_youtube_handle(channel_url)
-
-    if handle is None:
-        return jsonify({"error": "Invalid Channel URL!"}), 400
-
+    # Extract handle or channel ID from URL
+    handle, channel_id = extract_youtube_handle(channel_url)
     creator_info = {"channel": channel_url}
 
-    # Fetch channel ID based on handle
     try:
-        id_response = requests.get(
-            f"https://www.googleapis.com/youtube/v3/channels?part=id&forHandle={handle}&key={YOUTUBE_API_KEY}"
-        ).json()
-        if "items" in id_response and len(id_response["items"]) > 0:
-            id = id_response["items"][0]["id"]
-            creator_info["id"] = id
-            creator_info["handle"] = handle
+        # If we have a channel ID, fetch the handle first
+        if channel_id:
+            channel_response = requests.get(
+                f"https://www.googleapis.com/youtube/v3/channels?part=snippet&id={channel_id}&key={YOUTUBE_API_KEY}"
+            ).json()
 
+            if "items" in channel_response and len(channel_response["items"]) > 0:
+                custom_url = channel_response["items"][0]["snippet"].get("customUrl")
+                if custom_url:
+                    handle = (
+                        custom_url if custom_url.startswith("@") else f"@{custom_url}"
+                    )
+                creator_info["id"] = channel_id
+                creator_info["handle"] = handle
+            else:
+                return jsonify({"error": "Channel not found!"}), 400
         else:
-            print(f"Could not find the channel for the handle {handle}")
-    except:
-        return jsonify({"error": "Creator handle does not exist!"}), 400
+            # Use handle to get channel ID
+            id_response = requests.get(
+                f"https://www.googleapis.com/youtube/v3/channels?part=id&forHandle={handle[1:]}&key={YOUTUBE_API_KEY}"
+            ).json()
+
+            if "items" in id_response and len(id_response["items"]) > 0:
+                channel_id = id_response["items"][0]["id"]
+                creator_info["id"] = channel_id
+                creator_info["handle"] = handle
+            else:
+                return jsonify({"error": "Creator handle does not exist!"}), 400
+
+    except Exception as e:
+        print(f"Error fetching channel info: {str(e)}")
+        return jsonify({"error": "Failed to fetch channel information"}), 500
 
     # Fetch channel statistics based on ID
     try:
         statistics_response = requests.get(
-            f"https://www.googleapis.com/youtube/v3/channels?part=statistics&id={id}&key={YOUTUBE_API_KEY}"
+            f"https://www.googleapis.com/youtube/v3/channels?part=statistics&id={channel_id}&key={YOUTUBE_API_KEY}"
         ).json()
 
         if "items" in statistics_response and len(statistics_response["items"]) > 0:
@@ -863,12 +894,15 @@ def get_creater_info():
                 500,
             )
     except:
-        return jsonify({"error": "Channel statistics could not be fetched!"}), 500
+        return (
+            jsonify({"error": f"Channel statistics could not be fetched!"}),
+            500,
+        )
 
     # Fetch channel avatar
     try:
         avatar_response = requests.get(
-            f"https://www.googleapis.com/youtube/v3/channels?part=snippet&id={id}&key={YOUTUBE_API_KEY}"
+            f"https://www.googleapis.com/youtube/v3/channels?part=snippet&id={channel_id}&key={YOUTUBE_API_KEY}"
         ).json()
 
         if "items" in avatar_response and len(avatar_response["items"]) > 0:
@@ -887,15 +921,26 @@ def get_creater_info():
                     "https://www.youtube.com/img/desktop/yt_1200.png"
                 )
         else:
+            print(f"No avatar found for channel ID: {channel_id}")
             creator_info["avatar"] = "https://www.youtube.com/img/desktop/yt_1200.png"
     except Exception as e:
         print(f"Error fetching avatar: {str(e)}")
         creator_info["avatar"] = "https://www.youtube.com/img/desktop/yt_1200.png"
 
+    # Verify the avatar URL is accessible
+    try:
+        avatar_check = requests.head(creator_info["avatar"], timeout=5)
+        if avatar_check.status_code != 200:
+            print(f"Avatar URL not accessible: {creator_info['avatar']}")
+            creator_info["avatar"] = "https://www.youtube.com/img/desktop/yt_1200.png"
+    except Exception as e:
+        print(f"Error checking avatar URL: {str(e)}")
+        creator_info["avatar"] = "https://www.youtube.com/img/desktop/yt_1200.png"
+
     # Fetch Channel Title
     try:
         title_response = requests.get(
-            f"https://www.googleapis.com/youtube/v3/channels?part=snippet&id={id}&key={YOUTUBE_API_KEY}"
+            f"https://www.googleapis.com/youtube/v3/channels?part=snippet&id={channel_id}&key={YOUTUBE_API_KEY}"
         ).json()
         if "items" in title_response and len(title_response["items"]) > 0:
             creator_info["title"] = title_response["items"][0]["snippet"]["title"]
@@ -922,57 +967,52 @@ def get_creater_info():
     # Generate Credibility Points and Score
     try:
         credibility_prompt = f"""
-        Analyze the current credibility of the following creator as of {datetime.now().strftime('%Y-%m-%d')}: 
-        {creator_info["title"]} ({creator_info["handle"]})
-        Current subscriber count: {creator_info["statistics"].get("subscriberCount", "Unknown")}
+        You are a YouTube channel credibility analyzer. Analyze the credibility of this creator:
+        Channel: {creator_info["title"]} ({creator_info["handle"]})
+        Subscriber Count: {creator_info["statistics"].get("subscriberCount", "Unknown")}
+        Video Count: {creator_info["statistics"].get("videoCount", "Unknown")}
+        Total Views: {creator_info["statistics"].get("viewCount", "Unknown")}
+
+        Provide a factual, well-researched analysis focusing on:
+        1. Content accuracy and fact-checking practices
+        2. Professional background and expertise in their field
+        3. Transparency about sponsorships and potential biases
+        4. Track record of corrections when mistakes are made
+        5. Quality of sources and research methods
+        6. Community engagement and response to criticism
+        7. Consistency and reliability of information
+        8. Industry recognition and peer reviews
 
         Return your analysis in the following JSON format:
         {{
             "points": [
-                // List of 3-5 specific points about the creator's current credibility
-                // Each point should focus on recent events, current status, and up-to-date information
-                // IMPORTANT: Recent controversies or misleading content should be heavily weighted
-                // For smaller creators, focus on their expertise, content quality, and community trust
+                // 3-5 specific, factual points about the creator's credibility
+                // Each point must be based on verifiable information
+                // Focus on objective measures rather than subjective opinions
+                // Include both strengths and areas of concern
+                // Cite specific examples where possible
+                // Do not use objects or nested structures, only strings
+                // Don't put the actual score deduction in the points, just the points
             ],
-            "score": // A number between 0 and 100 representing current credibility
+            "score": // A number between 0 and 100 representing credibility
         }}
-        
-        Consider the following factors in your analysis, with special emphasis on recent events:
-        - Any recent controversies, misleading content, or factual inaccuracies (these should HEAVILY impact the score)
-        - Recent retractions, corrections, or apologies for incorrect information
-        - Current educational background or expertise in their niche
-        - Recent verification of claims and use of reliable sources
-        - Current track record of maintaining journalistic integrity
-        - Recent public perception and professional critiques
-        - Current content quality and accuracy
-        - Recent changes in content style or direction
-        - Current standing in their niche
-        - Recent partnerships or business ventures
-        - Current community interactions and controversies
-        - Recent growth trends and subscriber engagement
-        - For smaller creators:
-          * Focus on their expertise in their specific niche
-          * Consider their content quality relative to their experience level
-          * Evaluate their community engagement and trust
-          * Look at their consistency and dedication
-          * Consider their potential for growth and improvement
-        
+
         Scoring Guidelines:
-        - Start at 100 points
-        - Subtract 30-50 points for any recent major controversies or proven instances of deliberate misinformation
-        - Subtract 20-30 points for current lack of relevant expertise
-        - Subtract 15-25 points for recent patterns of unverified claims
-        - Subtract 10-20 points for each recent instance of retracted misinformation
-        - Add back points only for consistently demonstrated recent expertise
-        - For smaller creators:
-          * Be more lenient with production quality deductions
-          * Consider their growth potential and dedication
-          * Focus on their expertise in their specific niche
-          * Consider their community engagement and trust
-        
-        The score should reflect current credibility and err on the side of being harsh rather than lenient.
-        For smaller creators, focus on their potential and dedication rather than just current metrics.
-        Ensure the response is valid JSON.
+        - Start at 70 as a baseline for established creators
+        - Add or subtract points based on VERIFIED information only
+        - Do not speculate or make assumptions
+        - Consider the following factors:
+          * Verified expertise and credentials (+10-20)
+          * Consistent fact-checking practices (+10-15)
+          * Transparent disclosure of sponsorships/biases (+5-10)
+          * Professional affiliations and certifications (+5-10)
+          * Documented instances of misinformation (-20-30)
+          * Lack of transparency about qualifications (-10-15)
+          * Pattern of unverified claims (-15-20)
+          * Failure to correct proven errors (-10-15)
+
+        The score should be conservative and based only on verifiable information.
+        If certain information cannot be verified, do not include it in the scoring.
         """
 
         credibility_response, _ = ask_chatgpt(
