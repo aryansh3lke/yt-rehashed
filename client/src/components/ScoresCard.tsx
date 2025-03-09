@@ -118,6 +118,8 @@ export default function ScoresCard({
         p: 2,
         animationDelay: `${animationDelay}s`,
         height: "400px",
+        minWidth: 300,
+        maxWidth: 600,
       }}
     >
       <Typography variant="h6" textAlign="center" gutterBottom>

@@ -94,8 +94,17 @@ export default function CreatorCard({
       </Typography>
 
       {/* Statistics */}
-      <CardContent sx={{ width: "100%" }}>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+      <CardContent
+        sx={{ width: "100%", display: "flex", justifyContent: "center" }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
+            alignItems: "center",
+          }}
+        >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <PeopleIcon color="action" sx={{ fontSize: 20 }} />
             <Typography variant="body1">

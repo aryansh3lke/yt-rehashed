@@ -12,9 +12,15 @@ export default function BackgroundCard({
 }) {
   return (
     <Card
-      className="slide-up card-height relative flex h-[400px] w-full flex-1 flex-col p-4 lg:w-auto lg:min-w-[300px] lg:max-w-[600px]"
+      className="slide-up card-height"
       sx={{
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        p: 2,
         animationDelay: `${animationDelay}s`,
+        minWidth: 300,
+        maxWidth: 600,
       }}
     >
       <Typography variant="h6" textAlign="center" gutterBottom>
