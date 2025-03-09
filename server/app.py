@@ -15,6 +15,7 @@ from youtube_comment_downloader import YoutubeCommentDownloader, SORT_BY_POPULAR
 from youtube_transcript_api import YouTubeTranscriptApi
 import yt_dlp
 from datetime import datetime
+import time
 
 load_dotenv()
 
@@ -962,115 +963,151 @@ def get_creater_info():
         return jsonify({"error": "Background information could not be fetched!"}), 500
 
     # Generate Credibility Points and Score
-    try:
-        credibility_prompt = f"""
-        You are a YouTube channel credibility analyzer. Analyze the credibility of this creator:
-        Channel: {creator_info["title"]} ({creator_info["handle"]})
-        Subscriber Count: {creator_info["statistics"].get("subscriberCount", "Unknown")}
-        Video Count: {creator_info["statistics"].get("videoCount", "Unknown")}
-        Total Views: {creator_info["statistics"].get("viewCount", "Unknown")}
+    max_attempts = 5
+    attempt = 0
+    while attempt < max_attempts:
+        try:
+            credibility_prompt = f"""
+            You are a YouTube channel credibility analyzer. Analyze the credibility of this creator:
+            Channel: {creator_info["title"]} ({creator_info["handle"]})
+            Subscriber Count: {creator_info["statistics"].get("subscriberCount", "Unknown")}
+            Video Count: {creator_info["statistics"].get("videoCount", "Unknown")}
+            Total Views: {creator_info["statistics"].get("viewCount", "Unknown")}
 
-        Provide a factual, well-researched analysis focusing on:
-        1. Content accuracy and fact-checking practices
-        2. Professional background and expertise in their field
-        3. Transparency about sponsorships and potential biases
-        4. Track record of corrections when mistakes are made
-        5. Quality of sources and research methods
-        6. Community engagement and response to criticism
-        7. Consistency and reliability of information
-        8. Industry recognition and peer reviews
+            Provide a factual, well-researched analysis focusing on:
+            1. Content accuracy and fact-checking practices
+            2. Professional background and expertise in their field
+            3. Transparency about sponsorships and potential biases
+            4. Track record of corrections when mistakes are made
+            5. Quality of sources and research methods
+            6. Community engagement and response to criticism
+            7. Consistency and reliability of information
+            8. Industry recognition and peer reviews
 
-        Return your analysis in the following JSON format:
-        {{
-            "points": [
-                // 3-5 specific, factual points about the creator's credibility
-                // Each point must be based on verifiable information
-                // Focus on objective measures rather than subjective opinions
-                // Include both strengths and areas of concern
-                // Cite specific examples where possible
-                // Do not use objects or nested structures, only strings
-                // Don't put the actual score deduction in the points, just the points
-            ],
-            "score": // A number between 0 and 100 representing credibility
-        }}
+            Return your analysis in the following JSON format:
+            {{
+                "points": [
+                    // 3-5 specific, factual points about the creator's credibility
+                    // Each point must be based on verifiable information
+                    // Focus on objective measures rather than subjective opinions
+                    // Include both strengths and areas of concern
+                    // Cite specific examples where possible
+                    // Do not use objects or nested structures, only strings
+                    // Don't put the actual score deduction in the points, just the points
+                ],
+                "score": // A number between 0 and 100 representing credibility
+            }}
 
-        Scoring Guidelines:
-        - Start at 70 as a baseline for established creators
-        - Add or subtract points based on VERIFIED information only
-        - Do not speculate or make assumptions
-        - Consider the following factors:
-          * Verified expertise and credentials (+10-20)
-          * Consistent fact-checking practices (+10-15)
-          * Transparent disclosure of sponsorships/biases (+5-10)
-          * Professional affiliations and certifications (+5-10)
-          * Documented instances of misinformation (-20-30)
-          * Lack of transparency about qualifications (-10-15)
-          * Pattern of unverified claims (-15-20)
-          * Failure to correct proven errors (-10-15)
+            Scoring Guidelines:
+            - Start at 70 as a baseline for established creators
+            - Add or subtract points based on VERIFIED information only
+            - Do not speculate or make assumptions
+            - Consider the following factors:
+              * Verified expertise and credentials (+10-20)
+              * Consistent fact-checking practices (+10-15)
+              * Transparent disclosure of sponsorships/biases (+5-10)
+              * Professional affiliations and certifications (+5-10)
+              * Documented instances of misinformation (-20-30)
+              * Lack of transparency about qualifications (-10-15)
+              * Pattern of unverified claims (-15-20)
+              * Failure to correct proven errors (-10-15)
 
-        The score should be conservative and based only on verifiable information.
-        If certain information cannot be verified, do not include it in the scoring.
-        """
+            The score should be conservative and based only on verifiable information.
+            If certain information cannot be verified, do not include it in the scoring.
+            """
 
-        credibility_response, _ = ask_chatgpt(
-            credibility_prompt, CHATGPT_ANALYZING_ROLE
-        )
-        credibility_data = json.loads(credibility_response)
-        creator_info["credibilityPoints"] = credibility_data["points"]
-        creator_info["credibilityScore"] = credibility_data["score"]
-    except Exception as e:
-        return jsonify({"error": "Credibility analysis could not be completed"}), 500
+            credibility_response, _ = ask_chatgpt(
+                credibility_prompt, CHATGPT_ANALYZING_ROLE
+            )
+            credibility_data = json.loads(credibility_response)
+            creator_info["credibilityPoints"] = credibility_data["points"]
+            creator_info["credibilityScore"] = credibility_data["score"]
+            break  # Success, exit the loop
+        except Exception as e:
+            attempt += 1
+            print(f"Credibility analysis attempt {attempt} failed: {str(e)}")
+            if attempt == max_attempts:
+                return (
+                    jsonify({"error": "Credibility analysis failed after 5 attempts"}),
+                    500,
+                )
+            # Wait a short time before retrying
+            time.sleep(1)
 
     # Generate Content Quality Score
-    try:
-        content_quality_prompt = f"""
-        Return a score between 0 and 100 for the following creator's content quality:
-        {creator_info["title"]} ({creator_info["handle"]})
+    max_attempts = 5
+    attempt = 0
+    while attempt < max_attempts:
+        try:
+            content_quality_prompt = f"""
+            Return a score between 0 and 100 for the following creator's content quality:
+            {creator_info["title"]} ({creator_info["handle"]})
 
-        You need to conduct your own research to gather the necessary data using the web.
+            You need to conduct your own research to gather the necessary data using the web.
 
-        Take the following into account:
-        - Quality and accuracy of the content
-        - Creativity and uniqueness of the content
-        - Reasonable upload frequency for their format of content
+            Take the following into account:
+            - Quality and accuracy of the content
+            - Creativity and uniqueness of the content
+            - Reasonable upload frequency for their format of content
 
-        Make sure you return only a single floating point number between 0 and 100.
-        Do not return any text other than the score.
-        """
+            Make sure you return only a single floating point number between 0 and 100.
+            Do not return any text other than the score.
+            """
 
-        content_quality_response, _ = ask_chatgpt(
-            content_quality_prompt, CHATGPT_SCORE_ROLE
-        )
-        creator_info["contentQualityScore"] = re.search(
-            r"\d+", content_quality_response
-        ).group()
-    except Exception as e:
-        return (
-            jsonify({"error": "Content quality analysis could not be completed"}),
-            500,
-        )
+            content_quality_response, _ = ask_chatgpt(
+                content_quality_prompt, CHATGPT_SCORE_ROLE
+            )
+            creator_info["contentQualityScore"] = re.search(
+                r"\d+", content_quality_response
+            ).group()
+            break  # Success, exit the loop
+        except Exception as e:
+            attempt += 1
+            print(f"Content quality analysis attempt {attempt} failed: {str(e)}")
+            if attempt == max_attempts:
+                return (
+                    jsonify(
+                        {"error": "Content quality analysis failed after 5 attempts"}
+                    ),
+                    500,
+                )
+            # Wait a short time before retrying
+            time.sleep(1)
 
     # Generate Engagement Score
-    try:
-        engagement_prompt = f"""
-        Calculate a score between 0 and 100 for the following creator's engagement:
-        {creator_info["title"]} ({creator_info["handle"]})
+    attempt = 0
+    while attempt < max_attempts:
+        try:
+            engagement_prompt = f"""
+            Calculate a score between 0 and 100 for the following creator's engagement:
+            {creator_info["title"]} ({creator_info["handle"]})
 
-        You need to conduct your own research to gather the necessary data using the web.
+            You need to conduct your own research to gather the necessary data using the web.
 
-        Take the following into account:
-        - Number of views, likes, comments, and shares
-        - Engagement rate (comments per view, likes per view, shares per view)
-        - Overall impact and reach of the content
+            Take the following into account:
+            - Number of views, likes, comments, and shares
+            - Engagement rate (comments per view, likes per view, shares per view)
+            - Overall impact and reach of the content
 
-        Make sure you return only a single floating point number between 0 and 100.
-        Do not return any text other than the score.
-        """
+            Make sure you return only a single floating point number between 0 and 100.
+            Do not return any text other than the score.
+            """
 
-        engagement_response, _ = ask_chatgpt(engagement_prompt, CHATGPT_SCORE_ROLE)
-        creator_info["engagementScore"] = re.search(r"\d+", engagement_response).group()
-    except Exception as e:
-        return jsonify({"error": "Engagement analysis could not be completed"}), 500
+            engagement_response, _ = ask_chatgpt(engagement_prompt, CHATGPT_SCORE_ROLE)
+            creator_info["engagementScore"] = re.search(
+                r"\d+", engagement_response
+            ).group()
+            break  # Success, exit the loop
+        except Exception as e:
+            attempt += 1
+            print(f"Engagement analysis attempt {attempt} failed: {str(e)}")
+            if attempt == max_attempts:
+                return (
+                    jsonify({"error": "Engagement analysis failed after 5 attempts"}),
+                    500,
+                )
+            # Wait a short time before retrying
+            time.sleep(1)
 
     return jsonify({"creator_info": creator_info}), 200
 

@@ -16,17 +16,7 @@ export interface Comment {
   reply: boolean;
 }
 
-export type Resolution =
-  | ""
-  | "144p"
-  | "180p"
-  | "240p"
-  | "360p"
-  | "480p"
-  | "720p"
-  | "1080p"
-  | "1440p"
-  | "2160p";
+export type Resolution = "" | `${number}p`;
 
 export interface CreatorInfo {
   id: string;
