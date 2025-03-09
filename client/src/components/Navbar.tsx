@@ -14,7 +14,7 @@ import GithubIcon from "@mui/icons-material/GitHub";
 import MenuIcon from "@mui/icons-material/Menu";
 import SummarizeIcon from "@mui/icons-material/Summarize";
 import DownloadForOfflineIcon from "@mui/icons-material/DownloadForOffline";
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import AnalyticsIcon from "@mui/icons-material/Analytics";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 
 import ThemeButton from "./ThemeButton";
@@ -22,11 +22,15 @@ import { useTheme } from "@mui/material/styles";
 
 import AppLogo from "./AppLogo";
 
-const pages = ["Video Summarizer", "Video Downloader", "Credibility Analyzer"];
+const pages = [
+  "Video Summarizer",
+  "Video Downloader",
+  "Creator Analyzer [Beta]",
+];
 const pageIcons = [
   <SummarizeIcon />,
   <DownloadForOfflineIcon />,
-  <CheckBoxIcon />,
+  <AnalyticsIcon />,
 ];
 
 export default function Navbar() {
@@ -81,10 +85,13 @@ export default function Navbar() {
                 }}
               >
                 {pages.map((page, index) => (
-                  <Box className="flex flex-row items-center">
+                  <Box className="flex flex-row items-center" key={page}>
                     <Button
-                      href={`/${page.toLowerCase().replace(/\s/g, "-")}`}
-                      key={page}
+                      href={`/${page
+                        .toLowerCase()
+                        .replace(/\s/g, "-")
+                        .replace(/\[.*?\]/g, "")
+                        .replace(/-+$/, "")}`}
                       onClick={toggleDrawer(false)}
                       sx={{
                         color: "inherit",
@@ -167,7 +174,12 @@ export default function Navbar() {
                   >
                     {pages.map((page) => (
                       <Link
-                        href={`/${page.toLowerCase().replace(/\s/g, "-")}`}
+                        key={page}
+                        href={`/${page
+                          .toLowerCase()
+                          .replace(/\s/g, "-")
+                          .replace(/\[.*?\]/g, "")
+                          .replace(/-+$/, "")}`}
                         underline="none"
                         sx={{
                           color:
