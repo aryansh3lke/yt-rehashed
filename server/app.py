@@ -242,7 +242,6 @@ def get_youtube_video_title(video_url):
         "no_warnings": True,
         "skip_download": True,
         "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "cookiefile": "cookies.txt",  # Use cookies file instead of browser cookies
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -592,7 +591,6 @@ def get_resolutions():
             "quiet": True,
             "no_warnings": True,
             "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            "cookiefile": "cookies.txt",  # Use cookies file instead of browser cookies
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -662,7 +660,6 @@ def get_download():
         # Common options for both video and audio downloads
         common_opts = {
             "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            "cookiefile": "cookies.txt",  # Use cookies file instead of browser cookies
             "quiet": True,
         }
 
