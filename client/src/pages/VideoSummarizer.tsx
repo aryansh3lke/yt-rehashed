@@ -8,12 +8,11 @@ import SummaryBox from "../components/SummaryBox";
 import DownloadModal from "../components/DownloadModal";
 import ErrorAlert from "../components/ErrorAlert";
 import { Caption, Comment, Resolution } from "../types/interfaces";
-
-// Access Vercel environment variable in production to reach deployed backend server on Railway
-const PROXY_URL = process.env.REACT_APP_PROXY_URL || "http://localhost:8000";
+import { generateValidFilename } from "../utils";
+import { PROXY_URL } from "../proxy";
 
 export default function VideoSummarizer() {
-  const [inputLink, setLink] = useState<string>("");
+  const [inputLink, setInputLink] = useState<string>("");
   const [videoId, setVideoId] = useState<string>("");
   const [videoTitle, setVideoTitle] = useState<string>("");
   const [seekTime, setSeekTime] = useState<number>(0);
@@ -46,7 +45,7 @@ export default function VideoSummarizer() {
     const videoUrl: string = inputLink;
 
     // clear relevant state hooks
-    setLink("");
+    setInputLink("");
     setVideoId("");
     setVideoTitle("");
     setSeekTime(0);
@@ -72,7 +71,6 @@ export default function VideoSummarizer() {
           throw new Error(body.error);
         }
 
-        console.log(body);
         // initalize relevant state hooks
         setSummaryLoader(false);
         setVideoId(body.video_id);
@@ -124,7 +122,7 @@ export default function VideoSummarizer() {
         .catch((error) => {
           setDownloadModal(false);
           setDownloadLoader(false);
-          window.alert(error.message);
+          setAlert(error.message);
         });
     } else {
       // avoid reloading resolutions if already done once for the video
@@ -175,34 +173,20 @@ export default function VideoSummarizer() {
     }
   };
 
-  const generateValidFilename = (filename: string) => {
-    // Define the invalid characters (for most operating systems)
-    const invalidChars = /[<>:"/\\|?*]/g;
-
-    // Replace invalid characters with an underscore
-    const sanitized = filename.replace(invalidChars, "_");
-
-    // Trim leading and trailing whitespace
-    const trimmed = sanitized.trim();
-
-    // Remove any additional invalid characters (like null char)
-    const finalFilename = trimmed.replace(/\0/g, "");
-
-    return finalFilename;
-  };
-
   return (
     <div className="flex flex-col items-center justify-center gap-5">
       {alert && <ErrorAlert message={alert} setMessage={setAlert} />}
 
       <LinkForm
+        title="Video Summarizer"
         prompt={
           "Enter your YouTube video link to get a detailed summary of the transcript and comments"
         }
         placeholder={"https://www.youtube.com/watch?v="}
         inputLink={inputLink}
-        setLink={setLink}
+        setInputLink={setInputLink}
         onSubmit={generateSummaries}
+        submitText="Summarize"
       />
 
       <Loader loaderTrigger={summaryLoader} loaderType={"summary-loader"} />

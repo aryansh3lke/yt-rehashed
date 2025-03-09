@@ -11,17 +11,19 @@ import { Caption } from "../types/interfaces";
 export default function VideoPlayer({
   videoId,
   captions,
-  seekTime,
+  seekTime = 0,
   setSeekTime,
   displayResolutions,
   animationDelay,
+  showHeader = true,
 }: {
   videoId: string;
   captions: Caption[];
-  seekTime: number;
-  setSeekTime: React.Dispatch<React.SetStateAction<number>>;
+  seekTime?: number;
+  setSeekTime?: React.Dispatch<React.SetStateAction<number>>;
   displayResolutions: (e: React.MouseEvent) => void;
   animationDelay: number;
+  showHeader?: boolean;
 }) {
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -30,49 +32,67 @@ export default function VideoPlayer({
   };
   return (
     <section
-      className="slide-up flex flex-col gap-8 md:w-1/2"
+      className={`slide-up flex flex-col gap-8 ${showHeader ? "md:w-1/2" : "w-full"}`}
       style={{ animationDelay: `${animationDelay}s` }}
     >
-      <Box className="mt-5 flex flex-row items-center justify-center gap-2">
-        <p className="text-center text-4xl md:text-5xl">Original Video</p>
+      {showHeader && (
+        <Box className="mt-5 flex flex-row items-center justify-center gap-2">
+          <p className="text-center text-4xl md:text-5xl">Original Video</p>
 
-        <IconButton
-          onClick={displayResolutions}
-          sx={{ height: "40px", width: "40px" }}
-        >
-          <DownloadIcon fontSize="large" />
-        </IconButton>
-      </Box>
-      <Card className="card-height" sx={{ borderRadius: 2 }}>
-        <CardContent className="flex flex-col items-center gap-2" sx={{ p: 0 }}>
-          <Box className="two-thirds-card-height w-full">
-            <VideoEmbed videoId={videoId} seekTime={seekTime} />
-          </Box>
-          <Box
-            className="third-card-height flex w-full flex-col justify-start"
-            sx={{ overflowY: "auto", borderRadius: 2 }}
+          <IconButton
+            onClick={displayResolutions}
+            sx={{ height: "40px", width: "40px" }}
           >
-            {captions.map((caption, index) => (
-              <Box
-                className="flex w-full flex-row justify-start gap-4 p-2"
-                key={index}
-              >
-                <Button
-                  sx={{ p: 0 }}
-                  onClick={() => setSeekTime(caption.start)}
+            <DownloadIcon fontSize="large" />
+          </IconButton>
+        </Box>
+      )}
+      {setSeekTime ? (
+        <Card className="card-height w-full" sx={{ borderRadius: 2 }}>
+          <CardContent
+            className="flex flex-col items-center gap-2"
+            sx={{ p: 0 }}
+          >
+            <Box className="two-thirds-card-height w-full">
+              <VideoEmbed videoId={videoId} seekTime={seekTime} />
+            </Box>
+            <Box
+              className="third-card-height flex w-full flex-col justify-start"
+              sx={{ overflowY: "auto", borderRadius: 2 }}
+            >
+              {captions.map((caption, index) => (
+                <Box
+                  className="flex w-full flex-row justify-start gap-4 p-2"
+                  key={index}
                 >
+                  <Button
+                    sx={{ p: 0 }}
+                    onClick={() => setSeekTime(caption.start)}
+                  >
+                    <Typography variant="body2" textAlign={"left"}>
+                      {formatTime(caption.start)}
+                    </Typography>
+                  </Button>
                   <Typography variant="body2" textAlign={"left"}>
-                    {formatTime(caption.start)}
+                    {caption.text}
                   </Typography>
-                </Button>
-                <Typography variant="body2" textAlign={"left"}>
-                  {caption.text}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
-        </CardContent>
-      </Card>
+                </Box>
+              ))}
+            </Box>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="card-height w-full" sx={{ borderRadius: 2 }}>
+          <CardContent
+            className="flex flex-col items-center gap-2"
+            sx={{ p: 0 }}
+          >
+            <Box className="card-height w-full">
+              <VideoEmbed videoId={videoId} seekTime={seekTime} />
+            </Box>
+          </CardContent>
+        </Card>
+      )}
     </section>
   );
 }
